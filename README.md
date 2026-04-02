@@ -48,6 +48,7 @@ The hook system runs automatically during Claude Code lifecycle events:
 | **SessionStart** | `session-restore.sh` | Restores context from previous sessions — you pick up where you left off |
 | **SessionStart** | `gsd-check-update.js` | Checks for GSD package updates in background |
 | **PreToolUse** | `--no-verify` blocker | Blocks `git commit --no-verify` — never bypass git hooks |
+| **PreToolUse** | commit format guard | Validates commit message format: `type (Scope): Message` |
 | **PreToolUse** | staging guard | Warns before running anything with `RAILS_ENV=staging` (= production) |
 | **PreToolUse** | `gsd-prompt-guard.js` | Detects prompt injection attempts in `.planning/` files |
 | **PostToolUse** | `proactive-resolver.sh` | Auto-starts Docker, PostgreSQL, Redis when they're down. Detects missing deps and suggests install commands |
@@ -106,25 +107,24 @@ Multi-file skills with data and scripts:
 - **memory-review** — Review, optimize, and deduplicate the persistent memory system
 - **ui-ux-pro-max** — UI/UX design intelligence with 67 styles, 96 palettes, 57 font pairings, 25 chart types, 13 frontend stacks
 
-### Plugins (13)
+### Plugins (10)
 
-Official Claude Code marketplace plugins:
+Curated set of official Claude Code marketplace plugins — optimized for token efficiency (heavy plugins like `code-review`, `security-guidance`, and `skill-creator` are excluded to reduce context overhead):
 
 | Plugin | Purpose |
 |--------|---------|
 | `frontend-design` | Anti-slop UI guidelines, auto-activates on frontend tasks |
 | `context7` | Live documentation fetching for any library/framework |
-| `code-review` | Structured code review with PR integration |
 | `ruby-lsp` | Ruby language server integration |
 | `typescript-lsp` | TypeScript language server integration |
 | `pyright-lsp` | Python type checking integration |
-| `security-guidance` | Security best practices and vulnerability detection |
 | `code-simplifier` | Simplify and refine code for clarity |
 | `hookify` | Create hooks from conversation analysis |
 | `claude-md-management` | Audit and improve CLAUDE.md files |
 | `commit-commands` | Git commit, push, and PR workflows |
 | `pr-review-toolkit` | Comprehensive PR review with specialized agents |
-| `skill-creator` | Create, modify, and benchmark skills |
+
+> **Note:** `code-review`, `security-guidance`, and `skill-creator` were intentionally excluded — they add significant context overhead. Install them separately if needed: `claude plugins install code-review`
 
 ## How the Bootstrap Works
 

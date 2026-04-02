@@ -289,17 +289,14 @@ log "Installing plugins (skipping already-installed)..."
 PLUGINS=(
   "frontend-design"
   "context7"
-  "code-review"
   "ruby-lsp"
   "typescript-lsp"
   "pyright-lsp"
-  "security-guidance"
   "code-simplifier"
   "hookify"
   "claude-md-management"
   "commit-commands"
   "pr-review-toolkit"
-  "skill-creator"
 )
 
 PLUGINS_ADDED=0
