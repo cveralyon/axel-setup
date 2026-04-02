@@ -109,7 +109,7 @@ Multi-file skills with data and scripts:
 
 ### Plugins (10)
 
-Curated set of official Claude Code marketplace plugins — optimized for token efficiency (heavy plugins like `code-review`, `security-guidance`, and `skill-creator` are excluded to reduce context overhead):
+Official Claude Code marketplace plugins:
 
 | Plugin | Purpose |
 |--------|---------|
@@ -123,8 +123,6 @@ Curated set of official Claude Code marketplace plugins — optimized for token 
 | `claude-md-management` | Audit and improve CLAUDE.md files |
 | `commit-commands` | Git commit, push, and PR workflows |
 | `pr-review-toolkit` | Comprehensive PR review with specialized agents |
-
-> **Note:** `code-review`, `security-guidance`, and `skill-creator` were intentionally excluded — they add significant context overhead. Install them separately if needed: `claude plugins install code-review`
 
 ## How the Bootstrap Works
 
