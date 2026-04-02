@@ -1,123 +1,240 @@
-# AXEL Onboarding — Claude Code Team Configuration
+# AXEL Setup — Claude Code Power Configuration
 
-**AXEL** = Autonomous eXcelsior Engineering Layer
+**AXEL** = **A**utonomous e**X**celsior **E**ngineering **L**ayer
 
-This package **adds** the AXEL stack to your existing Claude Code setup. It is fully **additive** — it never overwrites your existing memory, settings, hooks, or CLAUDE.md. Everything you already have is preserved.
+A complete, production-grade configuration package for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that transforms it into a proactive engineering partner. Includes session persistence, automatic memory, proactive error resolution, 41 specialized agents, and 38 slash commands.
 
-## What's Included
+## Philosophy: Excelsior
 
-| Component | Count | Description |
-|---|---|---|
-| **Hooks** | 13 | Session management, auto-linting, proactive error resolution, memory extraction, context monitoring |
-| **Commands** | 12 + 26 GSD | Slash commands: `/daily`, `/style`, `/create-pr`, `/gsd:*`, etc. |
-| **Agents** | 41 | Specialized subagents: excelsior-verifier, bughunter, cross-repo, TDD, etc. |
-| **Skills** | 2 | Multi-file skills: memory-review, ui-ux-pro-max |
-| **Plugins** | 13 | Official marketplace: code-review, context7, frontend-design, LSPs, etc. |
-| **Settings** | Full | Permissions, feature flags, hook wiring, statusline |
-| **CLAUDE.md** | Team template | Team conventions, Excelsior principle, environment mapping (customizable) |
+AXEL operates on the **Excelsior principle** — always beyond, always better, never stop at obstacles:
+
+- **Proactive resolution**: When a command fails, AXEL investigates the root cause, attempts to fix it (start services, install deps, fix configs), and retries — before asking you
+- **Auto-verification**: After non-trivial changes (3+ files), AXEL automatically launches a verification agent in the background
+- **Session persistence**: Every session is summarized, key learnings are extracted to memory, and the next session starts with full context of what happened before
+- **Context awareness**: Monitors context window usage and warns before it runs out
 
 ## Quick Start
 
 ```bash
-# Clone or download this package
-# Then run:
-bash bootstrap.sh --user-name "Tu Nombre"
+git clone https://github.com/cveralyon/axel-setup.git
+cd axel-setup
+bash bootstrap.sh --user-name "Your Name"
+```
 
-# Or dry run first to see what it does:
+```bash
+# Preview what it does without changing anything:
 bash bootstrap.sh --dry-run
 ```
 
-**Safe to run multiple times** — it only adds what's missing. Existing files are never overwritten.
+**Safe to run multiple times.** The bootstrap is fully additive — it only adds what's missing, proposes upgrades for existing files, and never overwrites your configuration, memory, or CLAUDE.md.
 
 ## Prerequisites
 
-- **Claude Code CLI** installed (`claude --version`)
-- **Node.js >= 18** (for hook scripts)
-- **jq** (`brew install jq`)
-- **python3** (ships with macOS)
+| Tool | Why | Install |
+|------|-----|---------|
+| **Claude Code CLI** | The tool being configured | [docs.anthropic.com](https://docs.anthropic.com/en/docs/claude-code) |
+| **Node.js >= 18** | Hook scripts (session management, context monitor) | `brew install node` |
+| **jq** | JSON processing in hooks and settings merge | `brew install jq` |
+| **python3** | Some hook scripts | Ships with macOS |
 
-## What the Bootstrap Does
+## What's Included
 
-1. **Backs up** your existing `~/.claude/` config (safety net)
-2. **Adds hooks** that don't already exist (never overwrites your custom hooks)
-3. **Adds commands** that don't already exist (preserves your custom commands)
-4. **Adds agents** that don't already exist
-5. **Installs plugins** you don't have yet (skips already-installed)
-6. **Merges settings** — deep-merges new hooks/plugins/features into your existing settings.json
-7. **Preserves memory** — never touches your memory files, only ensures directory structure
-8. **Offers CLAUDE.md** — only if you don't have one yet
+### Hooks (13)
 
-## Post-Install
+The hook system runs automatically during Claude Code lifecycle events:
 
-1. **Restart Claude Code** to load plugins
-2. **Customize `~/CLAUDE.md`** — add your personal section (name, role, preferences)
-3. **Try these commands:**
-   - `/daily` — daily briefing
-   - `/style` — switch response style (debug, teach, architect, ship)
-   - `/gsd:help` — GSD workflow system
-   - `/create-pr` — create a PR with summary
+| Event | Hook | What it does |
+|-------|------|-------------|
+| **SessionStart** | `session-restore.sh` | Restores context from previous sessions — you pick up where you left off |
+| **SessionStart** | `gsd-check-update.js` | Checks for GSD package updates in background |
+| **PreToolUse** | `--no-verify` blocker | Blocks `git commit --no-verify` — never bypass git hooks |
+| **PreToolUse** | staging guard | Warns before running anything with `RAILS_ENV=staging` (= production) |
+| **PreToolUse** | `gsd-prompt-guard.js` | Detects prompt injection attempts in `.planning/` files |
+| **PostToolUse** | `proactive-resolver.sh` | Auto-starts Docker, PostgreSQL, Redis when they're down. Detects missing deps and suggests install commands |
+| **PostToolUse** | `post-edit-lint.sh` | Auto-runs rubocop/eslint/ruff after file edits (Ruby, TS/JS, Python) |
+| **PostToolUse** | `gsd-context-monitor.js` | Warns the agent when context window is running low (20% warning, 10% critical) |
+| **PostToolUse** | `session-log-action.sh` | Logs tool actions for session persistence |
+| **PostToolUse** | `session-checkpoint.sh` | Every ~40 tool calls, summarizes progress using Claude Sonnet |
+| **PostToolUse** | `post-commit-verify.sh` | After git commits, suggests launching the excelsior-verifier agent |
+| **PreCompact** | `precompact-save-context.sh` | Saves rich context snapshot before compaction (git state, pending work, decisions) |
+| **Stop** | `session-summarize.sh` | Compiles a structured session summary using Claude Sonnet |
+| **Stop** | `memory-extractor.sh` | Extracts key learnings and decisions to persistent memory using Claude Sonnet |
+| **Stop** | `desktop-notify.sh` | macOS notification when Claude finishes (only when terminal is not focused) |
 
-## Hook Architecture
+### Commands (12 custom + 26 GSD)
+
+Slash commands you can use in Claude Code:
+
+| Command | Description |
+|---------|-------------|
+| `/daily` | Daily briefing — pulls Linear issues, calendar events, and blockers |
+| `/style` | Switch response style: `debug`, `teach`, `architect`, `ship` (interactive picker) |
+| `/create-pr` | Create a PR with auto-generated summary |
+| `/deslop` | Remove AI-generated slop from code |
+| `/draft-message` | Help structure important Slack/email messages |
+| `/generate-prp` | Generate a Product Requirements Prompt from an INITIAL.md |
+| `/execute-prp` | Execute an existing PRP step by step |
+| `/multi-repo-feature` | Plan and coordinate features spanning multiple repos |
+| `/roadmap` | Generate feature and improvement suggestions |
+| `/sprint-summary` | Summarize sprint progress |
+| `/visualize` | Visualize code architecture |
+| `/weekly-review` | Weekly review of work done |
+
+Plus **26 GSD (Get Shit Done) subcommands** for structured project execution:
+`/gsd:help`, `/gsd:fast`, `/gsd:quick`, `/gsd:debug`, `/gsd:progress`, `/gsd:autonomous`, `/gsd:pause-work`, `/gsd:resume-work`, `/gsd:map-codebase`, `/gsd:session-report`, and more.
+
+### Agents (41)
+
+Specialized subagents that Claude Code can spawn for focused tasks:
+
+| Category | Agents |
+|----------|--------|
+| **Verification** | `excelsior-verifier`, `production-validator` |
+| **Code Quality** | `bughunter`, `security-check`, `cleanup`, `perf` |
+| **Development** | `feature`, `debug`, `tdd-mainder`, `test-gen`, `api-design` |
+| **Review** | `review`, `compare-branch`, `changelog` |
+| **Operations** | `deploy-check`, `db-check`, `incident` |
+| **Multi-repo** | `cross-repo`, `linear-task` |
+| **Communication** | `draft-message`, `sprint-summary` |
+| **Onboarding** | `onboard` |
+| **GSD System** | 20+ agents for structured project execution (planner, executor, verifier, researcher, etc.) |
+
+### Skills (2)
+
+Multi-file skills with data and scripts:
+
+- **memory-review** — Review, optimize, and deduplicate the persistent memory system
+- **ui-ux-pro-max** — UI/UX design intelligence with 67 styles, 96 palettes, 57 font pairings, 25 chart types, 13 frontend stacks
+
+### Plugins (13)
+
+Official Claude Code marketplace plugins:
+
+| Plugin | Purpose |
+|--------|---------|
+| `frontend-design` | Anti-slop UI guidelines, auto-activates on frontend tasks |
+| `context7` | Live documentation fetching for any library/framework |
+| `code-review` | Structured code review with PR integration |
+| `ruby-lsp` | Ruby language server integration |
+| `typescript-lsp` | TypeScript language server integration |
+| `pyright-lsp` | Python type checking integration |
+| `security-guidance` | Security best practices and vulnerability detection |
+| `code-simplifier` | Simplify and refine code for clarity |
+| `hookify` | Create hooks from conversation analysis |
+| `claude-md-management` | Audit and improve CLAUDE.md files |
+| `commit-commands` | Git commit, push, and PR workflows |
+| `pr-review-toolkit` | Comprehensive PR review with specialized agents |
+| `skill-creator` | Create, modify, and benchmark skills |
+
+## How the Bootstrap Works
+
+### For new files: Install
+
+Files that don't exist on your system are copied directly.
+
+### For existing files: Propose Upgrade
+
+When a file already exists but the AXEL version is different (potentially better), the bootstrap:
+
+1. Saves the AXEL version to `~/.claude/axel-upgrades/<category>/`
+2. Generates a `MANIFEST.md` listing all files with available upgrades
+3. Creates a `REVIEW.md` prompt that your Claude Code agent can follow
+
+**To review upgrades**, paste this into Claude Code after running the bootstrap:
 
 ```
-SessionStart
-  ├── gsd-check-update.js     — Check GSD package updates
-  └── session-restore.sh      — Restore previous session context
-
-PreToolUse
-  ├── --no-verify blocker     — Prevents bypassing git hooks
-  ├── staging guard            — Warns before RAILS_ENV=staging
-  └── gsd-prompt-guard.js     — Prompt injection detection
-
-PostToolUse
-  ├── proactive-resolver.sh   — Auto-resolve service failures
-  ├── post-edit-lint.sh       — Auto-lint after file edits
-  ├── gsd-context-monitor.js  — Context window warnings
-  ├── session-log-action.sh   — Log tool actions
-  ├── session-checkpoint.sh   — Periodic checkpoint summaries
-  └── post-commit-verify.sh   — Trigger verification after commits
-
-PreCompact
-  └── precompact-save-context.sh — Save rich context before compaction
-
-Stop
-  ├── session-summarize.sh    — Compile session summary (Sonnet)
-  ├── memory-extractor.sh     — Extract learnings to memory (Sonnet)
-  └── desktop-notify.sh       — macOS notification when done
+Read the file ~/.claude/axel-upgrades/REVIEW.md and follow its instructions
 ```
+
+Your agent will compare each file side-by-side, explain what's better in each version, and let you decide: **keep current**, **use AXEL version**, or **merge the best of both**. Nothing changes without your explicit approval.
+
+### For settings.json: Deep Merge
+
+The bootstrap uses a `jq` filter to deep-merge settings:
+
+- **Scalar values** (language, theme, etc.): your existing value always wins
+- **Hook arrays**: AXEL hooks are added alongside yours (deduplicated by command string)
+- **Plugin map**: new plugins are added; if you disabled a plugin, it stays disabled
+- **Permission arrays**: union of both lists
+- **Environment variables**: your existing vars are kept, missing ones are added
+
+### For memory: Never Touch
+
+Your memory files are never read, modified, or deleted. The bootstrap only ensures the directory structure exists (`~/.claude/memory/`, `~/.claude/memory/decisions/`).
 
 ## Memory System
 
-Your existing memory is **fully preserved**. The bootstrap only ensures the directory structure exists.
+AXEL includes an automatic persistent memory system:
 
-Memory types (auto-extracted by hooks):
-- **user**: your role, preferences, expertise
-- **feedback**: corrections and validated approaches
-- **project**: technical decisions, team context
-- **reference**: external system pointers
+- **`memory-extractor.sh`** (Stop hook): At session end, uses Claude Sonnet to analyze the conversation and extract key learnings, decisions, and preferences to `~/.claude/memory/` files
+- **`memory-dedup.sh`**: Hash-based duplicate detection + orphan cleanup + dead link removal
+- **`session-summarize.sh`** (Stop hook): Compiles a structured session summary for the next session's context
+- **`session-restore.sh`** (SessionStart hook): Loads previous session summaries so you pick up where you left off
 
-The `memory-extractor.sh` hook automatically extracts key learnings at session end.
-The `memory-dedup.sh` hook prevents duplicate entries.
+Memory types:
+| Type | Purpose | Example |
+|------|---------|---------|
+| `user` | Your role, preferences, expertise | "Senior backend dev, prefers terse responses" |
+| `feedback` | How to work with you (dos and don'ts) | "Never mock the database in integration tests" |
+| `project` | Technical decisions, team context | "Auth rewrite driven by compliance requirements" |
+| `reference` | Where to find things in external systems | "Pipeline bugs tracked in Linear project INGEST" |
 
 ## Customization
 
 ### Adding your own hooks
-Edit `~/.claude/settings.json` and add entries to the hooks section.
 
-### Removing components you don't need
-- Delete files from `~/.claude/hooks/`, `~/.claude/commands/`, or `~/.claude/agents/`
-- Remove corresponding hook references from `settings.json`
-- Disable plugins: set to `false` in `settings.json` → `enabledPlugins`
+Edit `~/.claude/settings.json` and add entries to the relevant event:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "your-custom-hook.sh" }]
+      }
+    ]
+  }
+}
+```
+
+### Removing components
+
+- **Hooks**: Delete from `~/.claude/hooks/` and remove the corresponding entry in `settings.json`
+- **Commands**: Delete from `~/.claude/commands/`
+- **Agents**: Delete from `~/.claude/agents/`
+- **Plugins**: Set to `false` in `settings.json` → `enabledPlugins`
 
 ### Language
-Default is Spanish. Change `"language"` in settings.json.
+
+Default is Spanish. Change `"language"` in `settings.json` to your preferred language.
+
+### Team CLAUDE.md
+
+The template at `~/CLAUDE.md` (created only if you don't have one) includes:
+- Commit format conventions
+- Environment mapping (test/development/staging)
+- Excelsior principle configuration
+- Multi-repo workflow guidelines
+
+Customize it with your team's specific repos, conventions, and rules.
 
 ## What's NOT Touched
 
 These are personal to each developer and are never modified:
+
 - **Memory content** — all your existing memories stay intact
-- **Existing hooks** — your custom hooks are preserved, new ones are added alongside
+- **Existing hooks** — your custom hooks are preserved; new ones are added alongside
 - **settings.local.json** — your personal permission overrides are untouched
-- **MCP server connections** — configured per account (Linear, Slack, etc.)
-- **OpenClaw notifications** — requires personal setup (not included)
+- **MCP server connections** — configured per account (Linear, Slack, GitHub, etc.)
 - **Disabled plugins** — if you've disabled a plugin, the merge respects that
+
+## Requirements
+
+- macOS (hooks use macOS-specific features like `osascript` for notifications)
+- Claude Code CLI with an active subscription
+- The `session-summarize.sh` and `memory-extractor.sh` hooks use `claude -p --model sonnet` for quality extraction — this consumes API tokens at session end
+
+## License
+
+MIT
