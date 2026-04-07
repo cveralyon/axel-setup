@@ -185,9 +185,9 @@ function sortTable(key) {
 }
 
 function costPill(cost) {
-  if (cost > 1) return \`<span class="pill pill-red">\$\${cost.toFixed(3)}</span>\`;
-  if (cost > 0.3) return \`<span class="pill pill-yellow">\$\${cost.toFixed(3)}</span>\`;
-  return \`<span class="pill pill-green">\$\${cost.toFixed(3)}</span>\`;
+  if (cost > 1) return \`<span class="pill pill-red">\$\${cost.toFixed(2)}</span>\`;
+  if (cost > 0.3) return \`<span class="pill pill-yellow">\$\${cost.toFixed(2)}</span>\`;
+  return \`<span class="pill pill-green">\$\${cost.toFixed(2)}</span>\`;
 }
 
 function miniBar(pct, color) {
@@ -241,12 +241,12 @@ function renderCards() {
   document.getElementById('cards').innerHTML = \`
     <div class="card">
       <div class="label">Costo total</div>
-      <div class="value text-yellow">\$\${totalCost.toFixed(3)}</div>
+      <div class="value text-yellow">\$\${totalCost.toFixed(2)}</div>
       <div class="sub">en \${totalSess} sesiones</div>
     </div>
     <div class="card">
       <div class="label">Hoy</div>
-      <div class="value text-green">\$\${todayCost.toFixed(3)}</div>
+      <div class="value text-green">\$\${todayCost.toFixed(2)}</div>
       <div class="sub">\${todayData.length} sesión(es)</div>
     </div>
     <div class="card">
@@ -262,7 +262,7 @@ function renderCards() {
     <div class="card">
       <div class="label">Sesiones esta semana</div>
       <div class="value text-purple">\${data.filter(r=>r.date>=WEEK_AGO).length}</div>
-      <div class="sub">\$\${data.filter(r=>r.date>=WEEK_AGO).reduce((s,r)=>s+r.cost,0).toFixed(3)} esta semana</div>
+      <div class="sub">\$\${data.filter(r=>r.date>=WEEK_AGO).reduce((s,r)=>s+r.cost,0).toFixed(2)} esta semana</div>
     </div>
   \`;
 }

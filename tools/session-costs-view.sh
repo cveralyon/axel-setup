@@ -48,12 +48,12 @@ case "$MODE" in
     }
     END {
       for (d in day) {
-        printf "%s  sesiones: %2d  costo: $%.3f  tokens: %5dk  limite-5h usado: %.1f%%\n",
+        printf "%s  sesiones: %2d  costo: $%.2f  tokens: %5dk  limite-5h usado: %.1f%%\n",
           d, sessions[d], day[d], tokens[d]/1000, five_h_delta[d]
       }
     }' | sort -r
     echo ""
-    TOTAL=$(tail -n +2 "$LOG_FILE" | awk -F',' '{sum+=$5} END {printf "%.3f", sum}')
+    TOTAL=$(tail -n +2 "$LOG_FILE" | awk -F',' '{sum+=$5} END {printf "%.2f", sum}')
     SESSIONS=$(tail -n +2 "$LOG_FILE" | wc -l | tr -d ' ')
     TOTAL_5H=$(tail -n +2 "$LOG_FILE" | awk -F',' '{sum+=$10} END {printf "%.1f", sum}')
     echo -e "${BOLD}Total acumulado: \$${TOTAL} en ${SESSIONS} sesión(es) — ${TOTAL_5H}% del límite de 5h consumido en total${RESET}"
@@ -116,7 +116,7 @@ while IFS=',' read -r date time sess proj cost in_tok out_tok ctx_pct five_h_end
   printf "${DIM}%-12s %-6s${RESET} ${CYAN}%-10s${RESET} %-18s ${cost_color}%7s${RESET} %7s %7s %5s%% ${five_end_color}%7s%%${RESET} ${five_delta_color}%8s%%${RESET}\n" \
     "$date" "$time" "$sess" "${proj:0:18}" "\$$cost" "$in_k" "$out_k" "$ctx_pct" "$five_h_end" "$five_h_delta"
 
-  TOTAL_COST=$(awk "BEGIN {printf \"%.3f\", $TOTAL_COST + ${cost:-0}}" 2>/dev/null)
+  TOTAL_COST=$(awk "BEGIN {printf \"%.2f\", $TOTAL_COST + ${cost:-0}}" 2>/dev/null)
   TOTAL_5H_DELTA=$(awk "BEGIN {printf \"%.1f\", $TOTAL_5H_DELTA + ${five_h_delta:-0}}" 2>/dev/null)
 done <<< "$DATA"
 

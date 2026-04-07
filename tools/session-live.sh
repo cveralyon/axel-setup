@@ -106,7 +106,7 @@ if [ -f "$LOG_FILE" ]; then
       printf "  ${DIM}%s${RESET}  ${CYAN}%-16s${RESET}  ${c_color}\$%s${RESET}  %sk+%sk tok  ${DIM}5h:+%s%%${RESET}\n" \
         "$time" "${proj:0:16}" "$cost" "$in_k" "$out_k" "$five_h_delta"
 
-      TOTAL_COST_TODAY=$(awk "BEGIN {printf \"%.3f\", $TOTAL_COST_TODAY + ${cost:-0}}")
+      TOTAL_COST_TODAY=$(awk "BEGIN {printf \"%.2f\", $TOTAL_COST_TODAY + ${cost:-0}}")
       TOTAL_5H_TODAY=$(awk "BEGIN {printf \"%.1f\", $TOTAL_5H_TODAY + ${five_h_delta:-0}}")
       SESSION_COUNT_TODAY=$((SESSION_COUNT_TODAY + 1))
     done <<< "$TODAY_DATA"
@@ -142,15 +142,15 @@ if [ -f "$LOG_FILE" ]; then
       n = asorti(arr, sorted, "@val_str_desc")
       for (i=1; i<=n; i++) {
         d = sorted[i]
-        printf "  %s%-12s%s  %2d ses  %s$%.3f%s  %5.0ftok  %s%.1f%%%s 5h\n",
+        printf "  %s%-12s%s  %2d ses  %s$%.2f%s  %5.0ftok  %s%.1f%%%s 5h\n",
           DIM, d, RESET, sessions[d], YELLOW, day[d], RESET, tokens[d], DIM, five_h[d], RESET
       }
     }' 2>/dev/null || \
     echo "$WEEK_DATA" | awk -F',' '{day[$1]+=$5; sessions[$1]++; tokens[$1]+=($6+$7)/1000; five_h[$1]+=$10}
-      END {for(d in day) printf "  %-12s %2d ses  $%.3f  %5.0ftok  %.1f%% 5h\n", d, sessions[d], day[d], tokens[d], five_h[d]}' | sort -r
+      END {for(d in day) printf "  %-12s %2d ses  $%.2f  %5.0ftok  %.1f%% 5h\n", d, sessions[d], day[d], tokens[d], five_h[d]}' | sort -r
 
     echo ""
-    WEEK_TOTAL=$(echo "$WEEK_DATA" | awk -F',' '{s+=$5} END {printf "%.3f",s}')
+    WEEK_TOTAL=$(echo "$WEEK_DATA" | awk -F',' '{s+=$5} END {printf "%.2f",s}')
     WEEK_5H=$(echo "$WEEK_DATA" | awk -F',' '{s+=$10} END {printf "%.1f",s}')
     WEEK_SESS=$(echo "$WEEK_DATA" | wc -l | tr -d ' ')
     printf "  ${BOLD}Total 7d: ${YELLOW}\$%s${RESET}${BOLD}  %s sesiones  —  %s%% del límite de 5h acumulado${RESET}\n" \

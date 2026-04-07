@@ -228,9 +228,9 @@ function renderCards() {
 
   const c5color = t5>100?'var(--red)':t5>50?'var(--yellow)':'var(--green)';
   document.getElementById('cards').innerHTML = \`
-    <div class="card"><div class="label">Costo total</div><div class="value" style="color:var(--yellow)">\$\${tc.toFixed(3)}</div><div class="sub">\${d.length} sesiones</div></div>
-    <div class="card"><div class="label">Hoy</div><div class="value" style="color:var(--green)">\$\${td.toFixed(3)}</div><div class="sub">\${tds} sesión(es)</div></div>
-    <div class="card"><div class="label">Esta semana</div><div class="value" style="color:var(--blue)">\$\${weekCost.toFixed(3)}</div><div class="sub">\${d.filter(r=>r.date>=WEEK_AGO()).length} sesiones</div></div>
+    <div class="card"><div class="label">Costo total</div><div class="value" style="color:var(--yellow)">\$\${tc.toFixed(2)}</div><div class="sub">\${d.length} sesiones</div></div>
+    <div class="card"><div class="label">Hoy</div><div class="value" style="color:var(--green)">\$\${td.toFixed(2)}</div><div class="sub">\${tds} sesión(es)</div></div>
+    <div class="card"><div class="label">Esta semana</div><div class="value" style="color:var(--blue)">\$\${weekCost.toFixed(2)}</div><div class="sub">\${d.filter(r=>r.date>=WEEK_AGO()).length} sesiones</div></div>
     <div class="card"><div class="label">Tokens totales</div><div class="value" style="color:var(--cyan)">\${(tt/1000).toFixed(0)}k</div><div class="sub">\${d.length?(tt/d.length/1000).toFixed(0):0}k prom/sesión</div></div>
     <div class="card"><div class="label">5h consumido total</div><div class="value" style="color:\${c5color}">\${t5.toFixed(1)}%</div><div class="sub">\${avg5.toFixed(1)}% prom/sesión</div></div>
     <div class="card"><div class="label">Activas ahora</div><div class="value" style="color:var(--purple)">\${active.length}</div><div class="sub">\${active.length?active.map(a=>a.cwd?a.cwd.split('/').pop():'?').join(', '):'ninguna'}</div></div>
@@ -252,7 +252,7 @@ function renderActive() {
   el.innerHTML = active.map(a => {
     const proj = a.cwd ? a.cwd.split('/').pop() : '?';
     const sid  = (a.session_id||'').slice(0,8);
-    const cost = (a.cost_usd||0).toFixed(3);
+    const cost = (a.cost_usd||0).toFixed(2);
     const tok  = Math.round(((a.total_input_tokens||0)+(a.total_output_tokens||0))/1000);
     const ctx  = a.ctx_used_pct||0;
     const five_h = a.five_h_pct||0;
@@ -377,7 +377,7 @@ function renderTable() {
       <td style="color:var(--muted)">\${r.time}</td>
       <td style="color:var(--cyan)">\${r.session_id}</td>
       <td>\${r.project}</td>
-      <td><span class="pill \${cc}">\$\${r.cost.toFixed(3)}</span></td>
+      <td><span class="pill \${cc}">\$\${r.cost.toFixed(2)}</span></td>
       <td style="color:var(--muted)">\${(r.input_tokens/1000).toFixed(0)}k</td>
       <td style="color:var(--muted)">\${(r.output_tokens/1000).toFixed(0)}k</td>
       <td>\${barHTML(r.ctx_pct,ctxC)}</td>
