@@ -2,7 +2,7 @@
 
 **AXEL** = **A**utonomous e**X**celsior **E**ngineering **L**ayer
 
-A complete, production-grade configuration package for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that transforms it into a proactive engineering partner. Includes session persistence, automatic memory, proactive error resolution, 41 specialized agents, and 38 slash commands.
+A complete, production-grade configuration package for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that transforms it into a proactive engineering partner. Includes session persistence, automatic memory, proactive error resolution, 41 specialized agents, 38 slash commands, and a real-time usage monitor.
 
 ## Philosophy: Excelsior
 
@@ -12,6 +12,7 @@ AXEL operates on the **Excelsior principle** — always beyond, always better, n
 - **Auto-verification**: After non-trivial changes (3+ files), AXEL automatically launches a verification agent in the background
 - **Session persistence**: Every session is summarized, key learnings are extracted to memory, and the next session starts with full context of what happened before
 - **Context awareness**: Monitors context window usage and warns before it runs out
+- **Usage monitoring**: Tracks token usage, cost, and rate limit consumption per session — live terminal dashboard and web dashboard at `http://localhost:9119`
 
 ## Quick Start
 
@@ -60,6 +61,7 @@ The hook system runs automatically during Claude Code lifecycle events:
 | **PreCompact** | `precompact-save-context.sh` | Saves rich context snapshot before compaction (git state, pending work, decisions) |
 | **Stop** | `session-summarize.sh` | Compiles a structured session summary using Claude Sonnet |
 | **Stop** | `memory-extractor.sh` | Extracts key learnings and decisions to persistent memory using Claude Sonnet |
+| **Stop** | `session-cost-log.sh` | Logs session cost, tokens, and 5h rate limit consumption to `~/.claude/session-costs.log` |
 | **Stop** | `desktop-notify.sh` | macOS notification when Claude finishes (only when terminal is not focused) |
 
 ### Commands (12 custom + 26 GSD)
@@ -99,6 +101,45 @@ Specialized subagents that Claude Code can spawn for focused tasks:
 | **Communication** | `draft-message`, `sprint-summary` |
 | **Onboarding** | `onboard` |
 | **GSD System** | 20+ agents for structured project execution (planner, executor, verifier, researcher, etc.) |
+
+### Usage Monitor
+
+AXEL installs a lightweight Node.js server that runs in the background (via launchd on macOS) and serves a real-time usage dashboard.
+
+**Live web dashboard** — auto-starts at login, always available at:
+```
+http://localhost:9119
+```
+
+Features:
+- Summary cards: total cost, today's cost, tokens, 5h rate limit % consumed
+- **Active sessions panel** with live progress bars (context %, 5h %, cost, per-session delta)
+- 4 charts: cost/day, 5h% per session, tokens (in+out stacked), sessions by project
+- Full session history table with filtering and sorting
+- Auto-refreshes every 30 seconds, no page reload needed
+
+**Status bar** shows live data on every Claude Code interaction:
+```
+Mainder-API | (main) | Sonnet 4.6 | ctx:69% | $1.26 | 5h:22% (+3.2%)
+```
+
+**Terminal live view** — runs in a terminal pane, updates every 10s:
+```bash
+watch -n 10 -c ~/.claude/tools/session-live.sh
+```
+
+**CLI log viewer:**
+```bash
+~/.claude/tools/session-costs-view.sh           # last 30 sessions
+~/.claude/tools/session-costs-view.sh today     # today only
+~/.claude/tools/session-costs-view.sh week      # last 7 days
+~/.claude/tools/session-costs-view.sh summary   # totals by day
+```
+
+**How the 5h rate limit tracking works:**
+- The `5h-acum` column shows the cumulative % of the 5-hour window used at session close
+- The `5h-sesion` column shows how much of the limit **this specific session** consumed (`end% - start%`)
+- The status bar shows both: `5h:22% (+3.2%)` = 22% total, this session used 3.2%
 
 ### Skills (2)
 

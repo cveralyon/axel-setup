@@ -376,6 +376,54 @@ else
 fi
 
 # ============================================================================
+# 7b. USAGE MONITOR — session cost log + live dashboard + web server
+# ============================================================================
+log "Setting up usage monitor..."
+
+# Ensure tools dir exists
+run mkdir -p "$CLAUDE_DIR/tools" "$CLAUDE_DIR/logs"
+
+MONITOR_TOOLS=(session-server.js session-live.sh session-dashboard-gen.sh session-costs-view.sh)
+MONITOR_ADDED=0
+for tool in "${MONITOR_TOOLS[@]}"; do
+  src="$SCRIPT_DIR/tools/$tool"
+  dest="$CLAUDE_DIR/tools/$tool"
+  [ -f "$src" ] || continue
+  if [ ! -f "$dest" ]; then
+    if ! $DRY_RUN; then cp "$src" "$dest" && chmod +x "$dest"; else info "[DRY RUN] Would add tool: $tool"; fi
+    MONITOR_ADDED=$((MONITOR_ADDED + 1))
+  else
+    skip "tools/$tool"
+  fi
+done
+
+# Install launchd service (macOS only) — auto-starts web monitor on login
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  PLIST_LABEL="com.${USERNAME:-$(whoami)}.claude-monitor"
+  PLIST_DEST="$HOME/Library/LaunchAgents/${PLIST_LABEL}.plist"
+  PLIST_SRC="$SCRIPT_DIR/templates/claude-monitor.plist"
+  NODE_BIN=$(which node 2>/dev/null || echo "/usr/local/bin/node")
+
+  if [ ! -f "$PLIST_DEST" ]; then
+    if ! $DRY_RUN; then
+      sed -e "s|{{USERNAME}}|${USERNAME:-$(whoami)}|g" \
+          -e "s|{{HOME}}|$HOME|g" \
+          -e "s|{{NODE_PATH}}|$NODE_BIN|g" \
+          "$PLIST_SRC" > "$PLIST_DEST"
+      launchctl load "$PLIST_DEST" 2>/dev/null && \
+        log "  Usage monitor started at http://localhost:9119" || \
+        warn "  launchd load failed — run manually: node ~/.claude/tools/session-server.js"
+    else
+      info "[DRY RUN] Would install launchd agent: $PLIST_LABEL"
+    fi
+  else
+    skip "launchd agent: $PLIST_LABEL"
+  fi
+fi
+
+log "Usage monitor: $MONITOR_ADDED tools added | Dashboard: http://localhost:9119"
+
+# ============================================================================
 # 8. KEYBINDINGS — Merge, not replace
 # ============================================================================
 if [ ! -f "$CLAUDE_DIR/keybindings.json" ]; then
@@ -488,6 +536,7 @@ info "  Commands: $CMDS_ADDED new | GSD: $GSD_ADDED new"
 info "  Agents:   $AGENTS_ADDED new"
 info "  Skills:   $SKILLS_ADDED new"
 info "  Plugins:  $PLUGINS_ADDED new  ($PLUGINS_SKIPPED already installed)"
+info "  Monitor:  $MONITOR_ADDED tools | http://localhost:9119"
 echo ""
 
 if [ "$TOTAL_UPGRADES" -gt 0 ]; then
