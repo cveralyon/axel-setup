@@ -15,7 +15,7 @@ The heaviest command. Ingests **Notion (sprints + backlog) + Linear + Git across
 
 - **Linear = single source of truth.** Everything else is an input.
 - **Early-stage disorder is expected.** The job of this command is to resolve it, not to complain about it.
-- **1 or more PRs = 1 card, but every PR must be represented in at least one card.** The default is 1-to-1: a single PR → a single card. Bundling 2-4 PRs into one card is valid **only** when they form literally one logical feature (usually cross-repo — e.g. API endpoint + SKYLINE page + Career Site propagation = 1 card). Never bundle unrelated PRs into "thematic" mega-cards. A week with 40 merged PRs should produce ~30-40 cards — the ratio of cards/PRs should stay above 0.7. Below that, you're over-bundling.
+- **1 PR → 1 or more cards. Every PR must be covered by at least one card.** The default is 1-to-1, but a single PR that actually contains several distinct features/fixes SHOULD produce multiple cards — one per logical unit of work. Sometimes even a single large commit inside a PR warrants its own card. The rule is about fidelity to the real work done, not about matching PR count. A week with 40 merged PRs typically produces **40 or more** cards, never fewer. The ratio `cards / PRs` must be `>= 1.0` as a floor (below 1 = you're hiding work by bundling). There is no upper bound.
 - **Dedup conservatively.** A false negative (two Linear issues for one thing) is easy to merge later. A false positive loses information. When in doubt, keep separate and flag for human review.
 - **Privacy gate on DMs.** Messages from DM Samu and DM Javi pass through a work-vs-personal classifier. Personal content is dropped entirely — never logged, never quoted, never added to Linear, never mentioned in outputs.
 - **Shared-system writes are gated.** Creating/updating Linear issues affects the team. First run defaults to `--dry-run`: print the proposed diff and wait for explicit confirmation.
@@ -128,7 +128,9 @@ Build canonical work items. Matching signals in order of confidence:
 - Two items have the same title but different clients.
 - Two items touch different repos AND have no shared reference.
 
-**1 or more PRs can map to 1 card, but every PR must be covered by some card.** Default is 1-to-1. Bundle only when 2-4 PRs form literally one logical feature (e.g. Mainder-API endpoint + SKYLINE page + Career-Site propagation = 1 card like "Multi-tenant iframe filter"). A bug fix + a feature in the same repo are ALWAYS separate cards. The point is: don't hide work by grouping heroically, but don't bloat with trivial splits either — let the logical unit of the feature decide.
+**1 PR → 1 or more cards. Every PR must be covered by at least one card.** The default is 1-to-1, but PRs that contain multiple distinct features/fixes should be split into multiple cards, one per logical unit. Even individual commits inside a fat PR can warrant their own card when they represent independent work. A bug fix + a feature in the same PR are ALWAYS separate cards. The rule: **every piece of logical work becomes visible as a card**. Never hide work by bundling heroically under a single umbrella card.
+
+The only cross-PR bundling allowed is when 2-4 PRs form literally ONE logical feature across repos (e.g. Mainder-API endpoint + SKYLINE page + Career-Site propagation = 1 card like "Multi-tenant iframe filter"). This is the rare exception, not the default.
 
 ### Phase 3b — Backfill retroactive (only if `--backfill` flag)
 
@@ -370,10 +372,11 @@ PRs de otros esperando tu review, decisiones de tech-guild que te afectan, incid
 - Duda → keep separate y flag.
 
 ### Granularidad de backfill
-- 1 o más PRs = 1 card, pero cada PR debe estar cubierto por alguna card.
-- Default: 1-to-1. Bundling (2-4 PRs) solo si son literalmente una feature lógica (usualmente cross-repo).
-- Si hay 40 PRs merged → debe haber ~30-40 cards. Calibración: `cards / PRs < 0.7` = sobre-agrupación, expandir.
-- No hay upper bound: si tener 40 cards para 40 PRs es lo correcto, son 40 cards.
+- **1 PR → 1 o más cards.** Cada PR debe estar cubierto por al menos 1 card.
+- Default 1-to-1, pero si un PR contiene varios features/fixes distintos, splitear en múltiples cards (incluso 1 por commit si aplica).
+- Cross-PR bundling (2-4 PRs en 1 card) es la **excepción rara**, solo cuando forman literalmente una feature cross-repo.
+- **Floor:** `cards / PRs >= 1.0`. Por debajo = sobre-agrupación, expandir.
+- **No hay upper bound:** 40 PRs pueden perfectamente generar 55 cards si hay PRs gordos con múltiples fixes dentro.
 
 ### Linear writes
 - Default dry-run. Confirmación explícita por índice permitida.
