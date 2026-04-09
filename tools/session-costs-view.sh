@@ -2,10 +2,10 @@
 # session-costs-view.sh
 # Pretty-print the session costs log
 # Usage:
-#   ~/.claude/session-costs-view.sh           → all sessions (last 30)
-#   ~/.claude/session-costs-view.sh today     → today only
-#   ~/.claude/session-costs-view.sh week      → last 7 days
-#   ~/.claude/session-costs-view.sh summary   → totals by day
+#   ~/.claude/tools/session-costs-view.sh           → all sessions (last 30)
+#   ~/.claude/tools/session-costs-view.sh today     → today only
+#   ~/.claude/tools/session-costs-view.sh week      → last 7 days
+#   ~/.claude/tools/session-costs-view.sh summary   → totals by day
 
 LOG_FILE="$HOME/.claude/session-costs.log"
 MODE="${1:-all}"

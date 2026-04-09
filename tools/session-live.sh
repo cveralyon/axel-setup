@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # session-live.sh — live terminal dashboard for Claude Code usage
-# Run with: watch -n 10 -c ~/.claude/session-live.sh
-# Or standalone (loops itself): ~/.claude/session-live.sh --loop
+# Run with: watch -n 10 -c ~/.claude/tools/session-live.sh
+# Or standalone (loops itself): ~/.claude/tools/session-live.sh --loop
 
 LOG_FILE="$HOME/.claude/session-costs.log"
 STATS_DIR="$HOME/.claude"
@@ -162,8 +162,8 @@ fi
 
 echo ""
 hr 70
-printf "  ${DIM}Para dashboard web: bash ~/.claude/session-dashboard-gen.sh${RESET}\n"
-printf "  ${DIM}Actualiza cada 10s con: watch -n 10 -c ~/.claude/session-live.sh${RESET}\n"
+printf "  ${DIM}Para dashboard web: bash ~/.claude/tools/session-dashboard-gen.sh${RESET}\n"
+printf "  ${DIM}Actualiza cada 10s con: watch -n 10 -c ~/.claude/tools/session-live.sh${RESET}\n"
 echo ""
 
 # Loop mode

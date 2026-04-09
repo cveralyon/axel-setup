@@ -274,6 +274,45 @@ These are personal to each developer and are never modified:
 - Claude Code CLI with an active subscription
 - The `session-summarize.sh` and `memory-extractor.sh` hooks use `claude -p --model sonnet` for quality extraction — this consumes API tokens at session end
 
+## Troubleshooting
+
+### Usage dashboard not responding on http://localhost:9119
+
+On a fresh `bootstrap.sh` run the launchd agent is installed and loaded automatically. If the dashboard stops responding — usually after a reboot on a machine where the plist was never registered with launchd, or after a manual install that left the plist outside `~/Library/LaunchAgents/` — run these checks:
+
+```bash
+# 1. Is anything listening on the port?
+lsof -iTCP:9119 -sTCP:LISTEN
+
+# 2. Is the launchd agent loaded?
+launchctl list | grep claude-monitor
+
+# 3. Is the plist in the right place?
+ls -l ~/Library/LaunchAgents/com.*.claude-monitor.plist
+```
+
+If the plist is missing from `~/Library/LaunchAgents/`, reinstall it from the template and load it:
+
+```bash
+USERNAME=$(whoami)
+NODE_BIN=$(which node)
+PLIST_DEST="$HOME/Library/LaunchAgents/com.${USERNAME}.claude-monitor.plist"
+
+sed -e "s|{{USERNAME}}|$USERNAME|g" \
+    -e "s|{{HOME}}|$HOME|g" \
+    -e "s|{{NODE_PATH}}|$NODE_BIN|g" \
+    ~/.claude/axel-upgrades/templates/claude-monitor.plist > "$PLIST_DEST" 2>/dev/null || \
+  sed -e "s|{{USERNAME}}|$USERNAME|g" -e "s|{{HOME}}|$HOME|g" -e "s|{{NODE_PATH}}|$NODE_BIN|g" \
+      "$(git -C ~/axel-onboarding rev-parse --show-toplevel 2>/dev/null)/templates/claude-monitor.plist" > "$PLIST_DEST"
+
+launchctl load -w "$PLIST_DEST"
+curl -sS -o /dev/null -w "HTTP: %{http_code}\n" http://localhost:9119
+```
+
+Expected output: `HTTP: 200`. Logs live at `~/.claude/logs/monitor.log` and `~/.claude/logs/monitor-error.log`.
+
+If the agent runs but the port stays closed, check the error log — most failures are a wrong `NODE_PATH` (fix: re-run the `sed` above after updating `NODE_BIN`) or a permission issue on `~/.claude/session-costs.log`.
+
 ## License
 
 MIT

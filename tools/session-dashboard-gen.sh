@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # session-dashboard-gen.sh
 # Generates a self-contained HTML dashboard from session-costs.log
-# Usage: bash ~/.claude/session-dashboard-gen.sh [--open]
+# Usage: bash ~/.claude/tools/session-dashboard-gen.sh [--open]
 
 LOG_FILE="$HOME/.claude/session-costs.log"
 OUT_FILE="$HOME/.claude/session-dashboard.html"
