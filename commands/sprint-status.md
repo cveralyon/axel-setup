@@ -231,9 +231,11 @@ For each Slack thread or DM that needs a response based on the reconciled state,
 - **For "can we add X?" questions:** if X exists → say so. If X doesn't exist → "actualmente no lo tenemos". Do NOT add "pero se puede desarrollar".
 
 **Draft targets (when relevant):**
-- Threads in `#incidents` that need status confirmation
-- DM Javi on items that need her input
-- DM Samu on things he explicitly asked for
+- Threads in `#incidents` that need status confirmation → draft as reply in the incident thread (`thread_ts` = parent message of the incident)
+- Threads in `#clients` where Intercom forwarded a client question → **draft as reply in that thread**, NOT as DM to Javi. Javi reads the #clients channel and will send the response directly to the client from there. Drafting inside the thread preserves context for the whole team and avoids scattering conversations across DMs.
+- DM Javi → only for internal coordination asks that are NOT about a specific client message (e.g. "pinchar a Diego de Qualis", "crees que vale la pena priorizar X como feature")
+- DM Samu → only for things he explicitly asked in DM
+- `#tech-guild` → only pure status updates for other devs, no decisions, direct send OK
 
 **Never draft on behalf of Cristián:**
 - Anything to a client directly (Intercom conversations)
@@ -396,6 +398,7 @@ PRs de otros esperando tu review, decisiones de tech-guild que te afectan, incid
 - **No ofrecer desarrollo:** si algo no existe → "no lo tenemos", punto. NO "podemos desarrollarlo".
 - **Quick wins sí** pueden ofrecerse si son chicos, reversibles, no rompen nada.
 - **Internos (#tech-guild, DM devs): send directo OK** solo para status updates sin decisiones.
+- **Thread targeting (IMPORTANTE):** los drafts van como reply EN EL THREAD donde apareció la pregunta/notificación original, NO como DM separado a Javi. Si Intercom forwardeó algo a #clients, el draft va en ese thread (`thread_ts` = parent). Si fue un incident en #incidents, el draft va en el thread del incident. Solo usar DM Javi para coordinación interna que NO es sobre un cliente específico (ej. "pinchar a Diego de Qualis"). Esto evita scatter de conversaciones y deja el contexto visible para todo el equipo.
 
 ### Paralelización
 - Phase 1 embarrassingly parallel.
