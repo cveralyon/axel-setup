@@ -231,8 +231,8 @@ For each Slack thread or DM that needs a response based on the reconciled state,
 - **For "can we add X?" questions:** if X exists → say so. If X doesn't exist → "actualmente no lo tenemos". Do NOT add "pero se puede desarrollar".
 
 **Draft targets (when relevant):**
-- Threads in `#incidents` that need status confirmation → draft as reply in the incident thread (`thread_ts` = parent message of the incident)
-- Threads in `#clients` where Intercom forwarded a client question → **draft as reply in that thread**, NOT as DM to Javi. Javi reads the #clients channel and will send the response directly to the client from there. Drafting inside the thread preserves context for the whole team and avoids scattering conversations across DMs.
+- Threads in `#incidents` that need status confirmation → draft as reply in the incident thread (`thread_ts` = parent message). Audience: Javi + the rest of the team reading the channel. Tone: internal, concise, no client-facing language.
+- Threads in `#clients` where Intercom forwarded a client question → **draft as reply in that thread tagging Javi explicitly** (`<@U07G632994K>`). **Critical understanding:** `#clients` is an INTERNAL channel — clients do NOT see it. Intercom forwards conversations as notifications. Javi is the one who reads them and responds to the client directly from Intercom. So the draft in #clients is NOT a client-facing message — it's an internal note for Javi with the technical context + (optionally) a suggested client-facing phrasing she can copy-edit. Always tag Javi so she gets notified.
 - DM Javi → only for internal coordination asks that are NOT about a specific client message (e.g. "pinchar a Diego de Qualis", "crees que vale la pena priorizar X como feature")
 - DM Samu → only for things he explicitly asked in DM
 - `#tech-guild` → only pure status updates for other devs, no decisions, direct send OK
@@ -399,6 +399,7 @@ PRs de otros esperando tu review, decisiones de tech-guild que te afectan, incid
 - **Quick wins sí** pueden ofrecerse si son chicos, reversibles, no rompen nada.
 - **Internos (#tech-guild, DM devs): send directo OK** solo para status updates sin decisiones.
 - **Thread targeting (IMPORTANTE):** los drafts van como reply EN EL THREAD donde apareció la pregunta/notificación original, NO como DM separado a Javi. Si Intercom forwardeó algo a #clients, el draft va en ese thread (`thread_ts` = parent). Si fue un incident en #incidents, el draft va en el thread del incident. Solo usar DM Javi para coordinación interna que NO es sobre un cliente específico (ej. "pinchar a Diego de Qualis"). Esto evita scatter de conversaciones y deja el contexto visible para todo el equipo.
+- **#clients es INTERNO, los clientes no lo leen.** Es un canal donde Intercom reenvía las conversaciones de clientes como notificaciones. Javi es quien las lee y responde al cliente desde Intercom. Entonces cuando drafteo una respuesta en un thread de #clients: (1) NO es un mensaje para el cliente, es una nota interna para Javi; (2) **siempre taggear a Javi con `<@U07G632994K>`** para que le llegue notificación; (3) contenido: contexto técnico interno + opcionalmente una frase sugerida en cursiva que Javi puede copiar y editar para mandar al cliente vía Intercom. Nunca escribir como si el cliente lo fuera a leer directamente.
 
 ### Paralelización
 - Phase 1 embarrassingly parallel.
