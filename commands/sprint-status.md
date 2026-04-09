@@ -15,7 +15,7 @@ The heaviest command. Ingests **Notion (sprints + backlog) + Linear + Git across
 
 - **Linear = single source of truth.** Everything else is an input.
 - **Early-stage disorder is expected.** The job of this command is to resolve it, not to complain about it.
-- **1 PR or 1 feature = 1 card.** Never bundle multiple unrelated PRs into "thematic" mega-cards. The only valid bundling is when 2-3 PRs form literally one cross-repo feature (e.g. API endpoint + SKYLINE page + Career Site propagation = 1 card). A week with 40 merged PRs should produce ~35-40 cards, not 9.
+- **1 or more PRs = 1 card, but every PR must be represented in at least one card.** The default is 1-to-1: a single PR → a single card. Bundling 2-4 PRs into one card is valid **only** when they form literally one logical feature (usually cross-repo — e.g. API endpoint + SKYLINE page + Career Site propagation = 1 card). Never bundle unrelated PRs into "thematic" mega-cards. A week with 40 merged PRs should produce ~30-40 cards — the ratio of cards/PRs should stay above 0.7. Below that, you're over-bundling.
 - **Dedup conservatively.** A false negative (two Linear issues for one thing) is easy to merge later. A false positive loses information. When in doubt, keep separate and flag for human review.
 - **Privacy gate on DMs.** Messages from DM Samu and DM Javi pass through a work-vs-personal classifier. Personal content is dropped entirely — never logged, never quoted, never added to Linear, never mentioned in outputs.
 - **Shared-system writes are gated.** Creating/updating Linear issues affects the team. First run defaults to `--dry-run`: print the proposed diff and wait for explicit confirmation.
@@ -128,7 +128,7 @@ Build canonical work items. Matching signals in order of confidence:
 - Two items have the same title but different clients.
 - Two items touch different repos AND have no shared reference.
 
-**1 PR = 1 card. Bundle only when 2-3 PRs form literally one cross-repo feature** (e.g. Mainder-API endpoint + SKYLINE page + Career-Site propagation = 1 card like "Multi-tenant iframe filter"). A bug fix + a feature in the same repo are ALWAYS separate cards.
+**1 or more PRs can map to 1 card, but every PR must be covered by some card.** Default is 1-to-1. Bundle only when 2-4 PRs form literally one logical feature (e.g. Mainder-API endpoint + SKYLINE page + Career-Site propagation = 1 card like "Multi-tenant iframe filter"). A bug fix + a feature in the same repo are ALWAYS separate cards. The point is: don't hide work by grouping heroically, but don't bloat with trivial splits either — let the logical unit of the feature decide.
 
 ### Phase 3b — Backfill retroactive (only if `--backfill` flag)
 
@@ -370,8 +370,10 @@ PRs de otros esperando tu review, decisiones de tech-guild que te afectan, incid
 - Duda → keep separate y flag.
 
 ### Granularidad de backfill
-- 1 PR = 1 card. Bundle solo si ≥2 PRs son literalmente una feature cross-repo.
-- Si hay 40 PRs merged → debe haber ~35-40 cards, no 9. Calibración: < PRs × 0.7 = sobre-agrupación.
+- 1 o más PRs = 1 card, pero cada PR debe estar cubierto por alguna card.
+- Default: 1-to-1. Bundling (2-4 PRs) solo si son literalmente una feature lógica (usualmente cross-repo).
+- Si hay 40 PRs merged → debe haber ~30-40 cards. Calibración: `cards / PRs < 0.7` = sobre-agrupación, expandir.
+- No hay upper bound: si tener 40 cards para 40 PRs es lo correcto, son 40 cards.
 
 ### Linear writes
 - Default dry-run. Confirmación explícita por índice permitida.
