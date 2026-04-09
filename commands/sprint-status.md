@@ -2,47 +2,72 @@
 
 The heaviest command. Ingests **Notion (sprints + backlog) + Linear + Git across all Mainder repos + Slack (clients, tech-guild, incidents, DM Javi, DM Samu)**, deduplicates, and **writes the consolidated state back into Linear** (creating missing issues, updating statuses, reassigning based on git authorship). Then produces three separate outputs.
 
-Linear is the single source of truth. Notion, Slack, and git are **inputs** that feed Linear.
+**Linear is the single source of truth.** Notion, Slack, and git are inputs that feed Linear. Notion is a historical view only — this command NEVER creates cards in Notion, only reads from it and (optionally) updates state of existing cards that are desynced.
 
 ## When to use
 
 - Weekly sprint review where you need one reconciled view across all channels
-- When Notion and Linear have drifted and you want to re-align them
+- When Notion/Linear/git have drifted and you want one consolidated state
 - Before talking to Samu / CS team about delivery status
 - After a messy sprint to clean up the tracking state
 
-## Design principles
+## Core design principles
 
 - **Linear = single source of truth.** Everything else is an input.
-- **Early-stage disorder is expected.** The first weeks WILL be messy across Notion/Slack/Linear. That disorder is the *input*, not the problem — the job of this command is to resolve it.
-- **Dedup conservatively.** A false negative (two Linear issues for the same thing) is easy to merge later. A false positive (merging two different items) loses information. When in doubt, keep separate and flag for human review.
-- **Privacy gate on DMs.** Messages from DM Samu and DM Javi pass through a work-vs-personal classifier. Personal content is **dropped entirely** — never logged, never quoted, never added to Linear, never mentioned in outputs.
-- **Shared-system writes are gated.** Creating/updating Linear issues affects the team. First run defaults to `--dry-run` style: print the proposed diff and wait for explicit confirmation.
+- **Early-stage disorder is expected.** The job of this command is to resolve it, not to complain about it.
+- **1 PR or 1 feature = 1 card.** Never bundle multiple unrelated PRs into "thematic" mega-cards. The only valid bundling is when 2-3 PRs form literally one cross-repo feature (e.g. API endpoint + SKYLINE page + Career Site propagation = 1 card). A week with 40 merged PRs should produce ~35-40 cards, not 9.
+- **Dedup conservatively.** A false negative (two Linear issues for one thing) is easy to merge later. A false positive loses information. When in doubt, keep separate and flag for human review.
+- **Privacy gate on DMs.** Messages from DM Samu and DM Javi pass through a work-vs-personal classifier. Personal content is dropped entirely — never logged, never quoted, never added to Linear, never mentioned in outputs.
+- **Shared-system writes are gated.** Creating/updating Linear issues affects the team. First run defaults to `--dry-run`: print the proposed diff and wait for explicit confirmation.
+- **NEVER post directly to CS channels or DMs.** All messages to `#clients`, `#incidents`, DM Javi, DM Samu, or any non-technical audience go through `slack_send_message_draft` so the user reviews and sends manually. Direct posts are allowed only in `#tech-guild` or DMs with devs (Alex, Emi), and only for status updates with no decisions pending.
 
 ## Inputs / flags
 
-- `--dry-run` — ingest, dedup, reconcile, and print the proposed Linear diff. **Do NOT write to Linear.** Use this for the first pass or whenever you're unsure.
-- `--yes` — skip the confirmation gate and execute the proposed writes immediately. Use only after you've verified a few dry-runs and trust the behavior.
-- `--sprint N[,M]` — target specific sprint numbers. Default: active sprints. **Currently 31 + 32** are both active due to a known reordering — if no argument is passed, include both.
+- `--dry-run` — ingest, dedup, reconcile, print the proposed Linear diff. **Do NOT write to Linear.** Use for first pass or whenever unsure.
+- `--yes` — skip the confirmation gate and execute writes immediately. Only after several successful dry-runs.
+- `--sprint N[,M]` — target specific sprint numbers. Default: active sprints.
 - `--window DAYS` — commit/Slack lookback window. Default: `14`.
 - `--since ISO` — alternative to `--window`, explicit start date.
+- `--backfill` — include the retroactive backfill phase (Phase 3b below). Off by default; on for first-ever runs or when the user explicitly asks for "catch up Linear with everything I've done".
 
-**Default behavior (no flags):** ingest → dedup → reconcile → print Linear diff → **wait for confirmation** → execute writes → emit three outputs.
+**Default behavior (no flags):** ingest → dedup → reconcile → print Linear diff → wait for confirmation → execute writes → emit three outputs.
 
 ## Data sources
 
 ### Notion
 - **Sprints DB:** `11c99e746b748141a921f086e452646d`
-  URL: https://www.notion.so/11c99e746b748141a921f086e452646d?v=11c99e746b748112b9b8000c781c9c03
 - **Backlog DB:** `11c99e746b7481ecbeb4de6fcac61b88`
-  URL: https://www.notion.so/11c99e746b7481ecbeb4de6fcac61b88?v=11c99e746b74818e9ed3000c77c7851c
 
-Always `notion-fetch` the DB first to discover the actual property names. Do NOT hardcode property keys — the schema will drift.
+**Read-only.** Always `notion-fetch` the DB first to discover property names. Do NOT hardcode property keys.
+
+**Warning:** `notion-query-database-view` on the full Sprints DB may return 250KB+ and explode the context. If that happens, skip Notion as primary source and rely on Linear (which already has the sprint info in issue descriptions). Fetch individual Notion pages by ID only when cross-referencing a specific card.
+
+**Notion write policy:** **NO creating new cards in Notion from this command.** The only allowed Notion writes are `update_properties` on existing pages whose status in Notion is clearly stale compared to the reconciled state (e.g. card says "In Progress" in Notion but is merged to main in git and Done in Linear). Even those updates are proposed in the diff and wait for confirmation.
 
 ### Linear
 - Active cycle for the team.
-- ALL issues touched in the window, not just ones assigned to Cristián (we need to see what others are doing to detect dedupes and assign correctly).
-- Treat Linear as the **destination** of writes, not just a source to read.
+- ALL issues touched in the window, not just ones assigned to Cristián.
+- Linear = destination of writes, not just source to read.
+- **Linear team:** `Mainder` (id: `ebad1606-c98d-47a6-bf9f-4d2bdda0f1a2`, key `MAI`)
+- **Cristián's Linear user:** `1f517371-5c7e-4cdc-8d9c-9e0cdf6c4fc5` (email: `cristian.vera@mainder.ai`)
+
+**Team member mapping (critical — git email ≠ Linear email):**
+| Git author email | Linear user | Notes |
+|---|---|---|
+| `cveralyon@gmail.com` | Cristián (`1f517371-5c7e-4cdc-8d9c-9e0cdf6c4fc5`) | Primary |
+| `cristian.vera@mainder.ai` | Cristián (same) | Work email |
+| `alexandre.bouhid@gmail.com` | Alexandre (`570f0fa5-869d-4d74-98a2-eecca0bab49d`) | |
+| `Emilianorozas@gmail.com` | — | **Not in Linear yet** — leave unassigned, mention in description |
+| `javiera.vargas@mainder.ai` | — | **Not in Linear** (CS, not dev) — never assign |
+| `samuel.sala1@gmail.com` | — | **Not in Linear** (CEO) — never assign |
+
+Cache this map across runs. Refresh only if `list_users` returns new members.
+
+**Linear label constraints (learned the hard way):**
+- Labels live in **groups** (e.g. "Repo", "Type", "Area"). Within a group, **only ONE label per issue is allowed**. Trying to set `skyline-v9` + `career-site-repo` on the same issue fails with `LabelIds not exclusive child labels`.
+- When a feature touches multiple repos: pick the **most representative** repo label (usually where the primary logic lives) and mention the others in the description.
+- The "Type" group conflict: `task` + `maintenance` collide, `task` + `Improvement` collide. Pick one.
+- Before creating issues in bulk, fetch `list_issue_labels` once and cache the label → group mapping to avoid failed requests.
 
 ### Git (local Mainder repos)
 - `~/Mainder/Mainder-API` (Rails 8)
@@ -52,395 +77,342 @@ Always `notion-fetch` the DB first to discover the actual property names. Do NOT
 - `~/Mainder/Career-Site`
 - `~/Mainder/back-office`
 
-For each repo: `git fetch origin --prune`, then capture main, staging, recent feature branches, PRs, and — critically — **author email for each commit** so we can map authorship back to Linear users.
+For each: `git fetch origin --prune`, then capture main, staging, feature branches, and — critically — author email for each commit for the mapping above.
 
 ### Slack
-- `#clients` — client requests and issues
-- `#tech-guild` — internal tech discussions and decisions
+- `#clients` — client requests (heavily Intercom-forwarded)
+- `#tech-guild` — internal tech discussions
 - `#incidents` — active incidents
-- **DM Javi** — always scanned, filtered through the privacy gate
-- **DM Samu** — always scanned, filtered through the privacy gate
+- **DM Javi** — always scanned, privacy gate applied
+- **DM Samu** — always scanned, privacy gate applied
 
 ## Phases
 
 ### Phase 1 — Ingest (parallel, read-only)
 
-Launch these concurrently; they are fully independent:
+Launch concurrently, they are fully independent:
 
-1. **Notion Sprints DB** — fetch schema, then query tasks in target sprints. Collect title, status, assignee, priority, due date, and any references (Linear IDs, PR URLs, client names) from properties and description.
-
-2. **Notion Backlog DB** — fetch schema, then query the top 50 prioritized items. Used only for dedup ("was this slipped to backlog?") and for detecting Slack requests that exist in backlog but not in sprint.
-
-3. **Linear cycle + recent issues** — current cycle for the team, plus all issues updated in the window regardless of assignee. Collect ID, title, description, state, assignee, labels, PR/branch references, created/updated dates.
-
-4. **Git across all Mainder repos** — `git fetch origin --prune` then:
-   - Commits on `origin/main` in window
-   - Commits on `origin/staging` in window
-   - `git log origin/main..origin/staging` (pending prod deploy)
-   - `git log origin/staging..origin/main` (divergence flag)
-   - Feature branches touched in window (pushed, not yet merged)
-   - For each commit: SHA, date, author email, subject, files touched
-   - PRs via `gh pr list --state all --search "updated:>=YYYY-MM-DD"` — titles, state, merged target, author
-   - **Keep a `email → commits` map** to detect authorship per canonical item later.
-
-5. **Slack** — for each of `#clients`, `#tech-guild`, `#incidents`, `DM Javi`, `DM Samu`:
-   - Read messages in window
-   - For each message: timestamp, author, text, reactions, reply count, thread context
-   - Capture Linear IDs (`[A-Z]{2,5}-\d+`), PR URLs, client names, and explicit questions/asks
+1. **Notion Sprints DB** — fetch schema. If full query view errors with 200KB+, skip and use Linear's descriptions as ground truth.
+2. **Notion Backlog DB** — fetch schema, query top 50 by priority for dedup detection.
+3. **Linear** — `list_cycles` current + `list_issues` updated in window + `list_users` for mapping + `list_issue_labels` for constraint map.
+4. **Git across all repos** — fetch + main/staging/branches + `gh pr list --author "@me" --state merged --search "merged:>=DATE"` for the full merge log in the window.
+5. **Slack** — read each channel + each DM with the privacy gate applied.
 
 ### Phase 2 — Privacy gate (DMs only)
 
-For every message from **DM Javi** and **DM Samu**, classify as `work` or `personal`:
+For every message from DM Javi and DM Samu, classify as `work` or `personal`.
 
-**Signals FOR work (keep):**
-- Mentions client names, product features, Linear IDs, PR URLs, repo names
-- Technical terms: bug, incidencia, deploy, staging, prod, PR, merge, rollback, feature
-- Explicit asks with business context: "¿puedes revisar X del cliente Y?", "necesitamos...", "hay que..."
-- References to meetings, sprints, roadmap, delivery dates
-- Screenshots/files clearly related to the product (when visible in metadata)
-- Mentions Samu, Javi, Cristián, team members in a work context
+**Signals FOR work:** client names, product features, Linear IDs, PR URLs, repo names, technical terms, explicit asks with business context, deliverables, meetings, roadmap, deadlines.
 
-**Signals AGAINST work (drop as personal):**
-- Family, relationships, health, personal finances (non-company)
-- Weekend plans, food, hobbies, memes, casual banter
-- Venting or emotional content unrelated to a specific work item
-- Politics, news, non-work opinions
-- Any message where the only topic is social/relational
+**Signals AGAINST work:** family, relationships, health, personal finance, weekend plans, hobbies, memes, casual banter, venting unrelated to work items, politics, social-only content.
 
-**Rule when ambiguous:** DROP. Treat as personal. Better to miss a work signal than to leak private content into Linear or a team-facing message. You can always re-run the command with the user clarifying later.
+**Ambiguous → DROP.** Treat as personal.
 
 **Hard rules:**
-- Personal messages are NEVER logged, quoted, summarized, or referenced anywhere in the outputs.
-- Do NOT report a count of personal messages per DM. Do not let dropped content be reverse-engineered.
-- The only trace allowed is a single line in Phase 8 output 3: "Chats personales con Javi/Samu: procesados con filtro de privacidad; contenido work-only incluido abajo." No stats, no counts, no dates.
+- Personal content NEVER appears in any output, ever.
+- No counts, no dates of filtered messages. No metadata that could reverse-engineer dropped content.
+- Only one generic line allowed in Output 3: "Chats personales con Javi/Samu: procesados con filtro de privacidad; contenido work-only incluido abajo."
 
 ### Phase 3 — Deduplicate and build canonical items
 
-Build a set of **canonical work items**. Each canonical item has an ID (synthetic until it gets a Linear ID) and a list of sources.
+Build canonical work items. Matching signals in order of confidence:
 
-Matching signals for the same canonical item, in order of confidence:
+1. **Explicit Linear ID** in any source → that's the canonical ID.
+2. **Shared PR URL or branch name** → same item.
+3. **Same Notion page ID** → collapse Notion duplicates.
+4. **Title similarity >80%** + same client/feature anchor → merge.
+5. **Client-specific anchor** (same client name + same incident type within 48h) → consider merging.
 
-1. **Explicit Linear ID** — if a Notion row, Slack message, PR, or branch mentions `LIN-123`, that's the canonical ID. All sources referencing it collapse into one item.
-2. **Shared PR URL or branch name** — same PR = same item, even if titles differ.
-3. **Same Notion task ID** — collapse Notion duplicates.
-4. **Title similarity** — if Notion title and Linear title or Slack subject share >80% token overlap AND the same client/feature name, merge them. Below 80%, keep separate.
-5. **Client-specific anchors** — if a Slack message and a Notion row both reference the same unique client name + same feature/incident type within 48h, consider merging. Otherwise keep separate.
+**Never merge when:**
+- Two items have different explicit Linear IDs.
+- Two items have the same title but different clients.
+- Two items touch different repos AND have no shared reference.
 
-**Never merge** when:
-- Two items have different explicit Linear IDs
-- Two items have the same title but different clients
-- Two items touch different repos AND have no shared reference
+**1 PR = 1 card. Bundle only when 2-3 PRs form literally one cross-repo feature** (e.g. Mainder-API endpoint + SKYLINE page + Career-Site propagation = 1 card like "Multi-tenant iframe filter"). A bug fix + a feature in the same repo are ALWAYS separate cards.
 
-**Canonical item shape:**
-```
-{
-  canonical_id: "tmp-01" | "LIN-123",
-  title: "best title from available sources",
-  sources: [
-    {type: "notion", id: "...", state: "...", url: "..."},
-    {type: "linear", id: "LIN-123", state: "In Progress", assignee: "...", url: "..."},
-    {type: "git", repo: "...", branch: "...", pr: "owner/repo#NNN", merged_to: ["staging"], authors: ["email1", "email2"]},
-    {type: "slack", channel: "clients", ts: "...", summary: "1 line, no personal content"},
-  ],
-  inferred_state: "...",        // Phase 4
-  inferred_assignee: "...",     // Phase 4 (Linear user ID)
-  blockers: [...],              // Phase 4
-}
-```
+### Phase 3b — Backfill retroactive (only if `--backfill` flag)
+
+For every merged PR in the window that has NO Linear issue linked and is NOT covered by any canonical item from Phase 3:
+
+- Create one `bf-NN` canonical item per PR.
+- Group ONLY when a cross-repo set of PRs was clearly one feature (same branch name pattern, same day, same subject stem).
+- State: `Done` (merged to main) or `In Review` (merged to staging only).
+- Assignee: the git author mapped via the team member mapping.
+- Cycle: current cycle if merge date ≥ cycle start, else no cycle.
+- Description should include: PR number(s), merge date, branch name, one-paragraph summary of what the PR did, related Linear issues if any, cluster this fix belongs to.
+- **Calibration check:** if the user has N merged PRs in the window and the backfill produces < N × 0.7 cards, something is wrong — you're over-bundling. Expand.
 
 ### Phase 4 — Reconcile state and authorship
 
-For each canonical item, compute the **reconciled state** and **reconciled assignee**.
+**State resolution** (priority: git > Linear > Notion > Slack):
 
-**State resolution (priority: git > Linear > Notion > Slack mention):**
-
-1. If PR merged to `main` → `Done` (deployed)
-2. Else if PR merged to `staging` → `In Review` with label `pending-prod`
-3. Else if PR open → `In Review`
-4. Else if branch has commits in window → `In Progress`
-5. Else if Linear says `In Progress` or `In Review` → keep Linear state
-6. Else if Notion says `Done` but no git evidence → `Desalineado` flag + keep the latest of {Linear, Notion}
-7. Else → `Todo` (or whatever Linear's initial state is)
+1. PR merged to `main` → `Done`
+2. PR merged to `staging` → `In Review` + label `pending-prod`
+3. PR open → `In Review`
+4. Branch has commits in window → `In Progress`
+5. Linear says `In Progress` / `In Review` → keep
+6. Notion says `Done` but no git evidence → flag `Desalineado`, keep latest of {Linear, Notion}
+7. Else → `Todo`
 
 **Blockers:**
-- Explicit "bloqueado"/"blocker"/"stuck"/"esperando" in Notion, Linear comments, or Slack thread referencing this item
-- Implicit: no commits in 7+ days on a branch flagged as In Progress + PR with CI failing
-- PR merge conflicts, stale PRs (>7 days without update)
+- Explicit "bloqueado" / "blocker" / "stuck" / "esperando" in Notion, Linear comments, Slack
+- Implicit: no commits in 7+ days on a branch marked In Progress + PR with CI failing
+- Stale PRs (>7 days without update), merge conflicts
 
 **Assignee resolution:**
-- Git author of the MOST RECENT commit on the item's branch (by commit date)
-- Map git email → Linear user via the Linear users list (`list_users`). Cache the map.
-- If no git activity: keep Linear assignee if set, else `unassigned`
-- If multiple authors on the branch: primary = most recent commit author; add the rest as collaborators in the issue description ("Colaboradores: @user2, @user3")
+- Git author of the most recent commit on the item's branch
+- Map via the team member mapping (git email → Linear user)
+- If author not in Linear → unassigned + mention in description
+- Multiple authors → primary = most recent commit, others as collaborators in description
 
 ### Phase 5 — Compute Linear diff
 
-For each canonical item, compute the proposed Linear operation:
+Per canonical item, compute the operation:
 
-- **CREATE** — item has no Linear ID. Build a new issue draft:
-  - `title`: best title from sources
-  - `description`: markdown with:
-    - Summary of what this is
-    - Sources: list of Notion link, PR URL, Slack permalink(s), client name
-    - Inferred state rationale
+- **CREATE** — no Linear ID. Build draft:
+  - `title`: best from sources
+  - `description`: markdown with what, sources (Notion link, PR URL, Slack permalinks), client name, rationale for inferred state
   - `state`: inferred state
-  - `assignee`: inferred assignee
-  - `labels`: derived from repo name, client name, and type (bug/feature/incident/tech-debt)
-  - `cycle`: current cycle
-  - `priority`: inherit from Notion if set, else `None`
+  - `assignee`: inferred assignee (mapped via team map)
+  - `labels`: **one per group max**, derived from repo/type/area. Mention cross-repo context in description.
+  - `cycle`: current if within cycle dates
+  - `priority`: inherit from Notion/Linear if set
 
-- **UPDATE_STATE** — Linear issue exists but its state differs from reconciled state. Build a patch.
+- **UPDATE_STATE** — existing Linear issue with different reconciled state
+- **UPDATE_ASSIGNEE** — different reconciled assignee
+- **ADD_COMMENT** — new Slack/git context not captured yet
+- **ADD_LABEL** — missing labels (respecting group constraint)
+- **NOTION_UPDATE** — existing Notion card with stale status vs reconciled (rare, use sparingly)
+- **NO_CHANGE** — everything aligned
 
-- **UPDATE_ASSIGNEE** — reconciled assignee differs from current Linear assignee. Build a patch.
-
-- **ADD_COMMENT** — new Slack context or git activity not yet captured in the Linear issue. Build a comment draft with the new info only.
-
-- **ADD_LABEL** — missing labels (repo, client, type). Build a patch.
-
-- **NO_CHANGE** — everything aligns. Nothing to do.
-
-Collect all operations into a structured diff. For each operation, record the `reason` (one line explaining why this change) so the confirmation step is reviewable.
+Each operation records a one-line `reason` for the confirmation step.
 
 ### Phase 6 — Confirmation gate
 
-Print the proposed diff as a human-readable plan:
-
-```
-## Linear — cambios propuestos
-
-### CREATE (N issues)
-1. [tmp-01] "Título" — assignee: @user — state: In Progress
-   Razón: detectado en Notion sprint 32 + PR merged a staging, sin Linear issue
-   Sources: Notion page, PR owner/repo#NNN, Slack #clients 2026-04-08
-
-2. ...
-
-### UPDATE_STATE (N issues)
-1. LIN-123 "Título" — In Progress → Done
-   Razón: PR owner/repo#NNN merged a main 2026-04-07
-
-### UPDATE_ASSIGNEE (N issues)
-1. LIN-456 "Título" — @oldUser → @newUser
-   Razón: último commit en branch feat/xxx por newUser@mainder.ai
-
-### ADD_COMMENT (N issues)
-1. LIN-789 — nuevo contexto de Slack #clients 2026-04-08
-
-### ADD_LABEL (N issues)
-1. LIN-999 — agregar labels: [mainder-api, cliente-acme, bug]
-
-### NO_CHANGE (N issues)
-(shown as a collapsed count)
-```
-
-Then:
-- If `--dry-run`: STOP here. Emit the diff and proceed to Phase 8 (outputs) WITHOUT executing.
-- If `--yes`: proceed to Phase 7 without asking.
-- Otherwise: wait for user confirmation. Options:
-  - `apply all` → execute all operations
-  - `apply 1,3,5-8` → execute selected operations by index
-  - `cancel` → abort, no writes
-  - `show N` → print full details for operation N before deciding
+Print the diff as a human-readable plan, then:
+- `--dry-run` → STOP, emit outputs without writing.
+- `--yes` → proceed without asking.
+- Default → wait for user:
+  - `apply all`
+  - `apply 1,3,5-8`
+  - `apply core` — preset of high-leverage ops (user decides scope per run)
+  - `cancel`
+  - `show N` — expand operation N before deciding
 
 ### Phase 7 — Execute Linear writes
 
-Execute the confirmed operations sequentially (Linear MCP rate limits matter). For each:
-- Try the operation
-- On success: record the resulting Linear issue URL/ID
-- On failure: capture the error, continue with the next operation, report all failures at the end
+Execute sequentially (MCP rate limits). Continue on individual failures, report all at the end.
 
-After execution, print a summary:
+**Label failure retry:** if an operation fails with `LabelIds not exclusive child labels`, auto-drop the lower-priority label from the conflicting group and retry once. Log both labels in the description.
+
+Summary format:
 ```
 ## Linear — cambios aplicados
-
-✓ Creados: N (con URLs)
+✓ Creados: N (con URLs y IDs)
 ✓ Actualizados: N
 ✓ Comentados: N
 ✗ Fallidos: N (con razón por cada uno)
 ```
 
-**Rollback helper:** if any CREATE succeeded and the user wants to undo, log the created issue IDs in a rollback hint at the bottom: `rm: LIN-NEW-1, LIN-NEW-2` so the user can delete them manually in Linear if needed.
+Rollback hint: list created IDs so they can be deleted manually if needed.
 
-### Phase 8 — Generate three outputs
+### Phase 8 — Slack message drafts (CS-safe)
 
-After (or instead of, in dry-run) Phase 7, emit these three artifacts as separate sections.
+For each Slack thread or DM that needs a response based on the reconciled state, produce a **draft** via `slack_send_message_draft` (NOT a direct post). The user reviews in Slack and sends.
+
+**Tone rules for draft content:**
+- **Audience is non-technical** (recruiters, CS, business). Write in simple, warm, direct Spanish (neutro/chileno).
+- **NEVER mention PR numbers, Linear IDs (MAI-X), class names, controller names, branch names, or technical jargon.** Instead: "arreglado", "ya está en producción", "el problema era X".
+- **If something doesn't exist in the product, the answer is "no lo tenemos". Period.** NEVER offer to develop it. Do not say "podemos planificarlo", "si quieres lo construimos", "lo proponemos como mejora". That creates false expectations and inflates scope.
+- **Offering solutions requires pre-approval** from Cristián, EXCEPT when it's a quick-win: small change, doesn't break anything, reversible, clear. Quick-wins can be offered as "quick fix". Everything else: draft a response that just acknowledges and states current state.
+- **For status updates on fixed bugs:** confirm the fix in plain language. Do not cite PR or tech details. "Arreglado, ya está en producción. Si vuelve a pasar avísame."
+- **For "can we add X?" questions:** if X exists → say so. If X doesn't exist → "actualmente no lo tenemos". Do NOT add "pero se puede desarrollar".
+
+**Draft targets (when relevant):**
+- Threads in `#incidents` that need status confirmation
+- DM Javi on items that need her input
+- DM Samu on things he explicitly asked for
+
+**Never draft on behalf of Cristián:**
+- Anything to a client directly (Intercom conversations)
+- Financial/legal/compliance decisions
+- Anything requiring Cristián's judgment call
+
+**Internal channels allowed for direct posts (no draft):**
+- `#tech-guild` — only pure status updates for other devs, no decisions
+- DM Alex, DM Emi — dev-to-dev comms
+
+### Phase 9 — Three outputs
 
 ---
 
 ## OUTPUT 1 — Linear consolidado (resumen)
 
-One-screen summary of the current Linear state of the sprint(s) AFTER writes.
-
 ```
-# Linear — Sprint 31 + 32 consolidado — [fecha]
+# Linear — Sprint [N+M] consolidado — [fecha]
 
-## Por estado
-- Done (en prod): N issues
-- In Review (pending prod deploy): N
+## Por estado (post-aplicación)
+- Done (en prod): N
+- In Review (staging pending prod): N
 - In Review (PR open): N
 - In Progress: N
 - Todo: N
 - Blocked: N
 
 ## Por asignado
-- @cristian: N issues (N done, N in progress, N todo)
-- @javi: N issues
-- @samu: N issues
-- otros...
+- @cristian.vera: N
+- @alexandre.q: N
+- unassigned: N (detalles)
 
-## Por repo / área
-- Mainder-API: N
-- SKYLINE-V9: N
-- ...
+## Por repo
+- Mainder-API: N | SKYLINE-V9: N | MultipostingService: N | AIAgentService: N | Career-Site: N | back-office: N
 
-## Stoppers activos (detalle en output 3)
-- LIN-XXX — razón corta
+## Stoppers activos (detalle en Output 3)
+- MAI-XXX — razón corta
 
-## Nuevas issues creadas este run
-- LIN-NEW-1 "Título" — de Slack #clients
-- LIN-NEW-2 "Título" — de Notion sprint 32 sin Linear ID
-- ...
+## Issues creadas en este run
+- MAI-XX Título — fuente (Slack / backfill / Notion / nueva)
 ```
 
 ---
 
-## OUTPUT 2 — Review detallado para CS + Samu
+## OUTPUT 2 — Review para CS + Samu (copy-paste ready, work-only)
 
-A polished, copy-paste-ready message in Spanish (neutro/chileno), work-only, zero personal content, zero jargon unless unavoidable. Directed at Customer Success team + Samu.
+Spanish neutro/chileno, cálido y profesional. 250-450 palabras. Zero jerga. Zero PR#. Zero Linear IDs. Zero contenido personal.
 
 ```
-# Sprint 31 + 32 — review [semana del DD/MM al DD/MM]
+# Sprint [N+M] — review [semana del DD/MM al DD/MM]
 
-Buenas 👋 Resumen consolidado del estado actual cruzando Notion, Linear, Slack y los repos.
+Buenas 👋 Resumen consolidado del estado actual.
 
 ## 🟢 Entregado al cliente (en producción)
-Lista de 3-7 bullets, por feature o cliente. Cada bullet conecta con valor de negocio:
-- **Cliente X — [feature]** — qué se entregó, qué habilita. Referencia opcional a LIN-XXX.
-- ...
+3-7 bullets por feature o cliente, conectando con valor de negocio.
 
 ## 🚢 Listo, esperando deploy a prod
-Lo que ya está validado en staging:
-- **[Feature / fix]** — estado, ETA si existe, cliente afectado
-- ...
+Lo que ya está en pre-prod (staging). Incluye ETA si existe.
 
 ## 🔄 En curso (foco de la semana)
-Top 5 en flight, quién lidera, % estimado:
-- **[Tarea]** — @owner — [avance]
-- ...
+Top 5 en flight, quién lidera, % estimado si aplica.
 
 ## 🔴 Stoppers y riesgos
-Solo lo que impacta delivery:
-- **[Stopper]** — razón, owner, ayuda necesaria
-- ...
+Solo lo que impacta delivery: razón, owner, ayuda necesaria.
 
 ## 📬 Pendientes de CS / clientes sin mover
-Requests o incidencias detectadas en #clients o en mails de CS que aún no están en cola:
-- **Cliente Y** — resumen, prioridad sugerida
-- ...
+Requests detectadas que aún no están en cola, con prioridad sugerida.
 
 ## 📊 Números
-- Entregado: N items | En staging: N | En curso: N | Stoppers: N
-- PRs mergeados esta semana: N | Commits: N
+- Entregado: N | En staging: N | En curso: N | Stoppers: N
 
 ## 🎯 Foco siguiente semana
-2-3 frases priorizando qué sigue y por qué (impacto cliente > deuda técnica > refactors).
+2-3 frases priorizando qué sigue y por qué.
 
 ¿Comentarios, ajustes de prioridad? 🙏
 ```
 
-Format rules for output 2:
-- Spanish neutro/chileno, cálido pero profesional
-- Sin lenguaje técnico innecesario. "PR mergeado" está OK; "reconcile state machine" no.
-- Cero contenido personal de DMs.
-- Cero jerga interna desconocida (usar "entregado al cliente" no "merged a main").
-- No mencionar issues por ID a menos que CS ya los use; preferir nombres de feature/cliente.
-- 250-450 palabras. Legible en un scroll.
+**Format rules for Output 2:**
+- Cálido pero profesional.
+- Sin lenguaje técnico innecesario. "PR mergeado" NO; "ya está entregado" SÍ.
+- Zero jerga interna. "merged a main" NO; "en producción" SÍ.
+- No mencionar IDs a menos que CS ya los use.
+- 250-450 palabras. Scrolleable.
+- Siempre cerrar con pregunta abierta invitando respuesta.
 
 ---
 
-## OUTPUT 3 — Lista personal para Cristián (stoppers + pendientes)
-
-Brutal y directo. Solo para ti. Detecta lo que te está bloqueando AHORA y lo que está pendiente y requiere tu atención.
+## OUTPUT 3 — Lista personal para Cristián (brutal y directa)
 
 ```
 # Tu foco personal — [fecha]
 
-## 🛑 Stoppers (lo que te está frenando HOY)
-Cada uno con: qué es, por qué está frenado, qué desbloqueo específico se necesita.
-- **[LIN-XXX] Título** — frenado hace [N días]. Razón: [X]. Desbloqueo: [acción concreta, ideally una sola].
-- ...
+## ✅ Cerrados desde el run anterior
+Lista breve de lo que se destrabó.
 
-## ⏳ Pendientes tuyos específicos (nadie más puede hacerlos)
-Cosas asignadas a ti, en flight, con fricción detectada:
-- **[LIN-XXX] Título** — último commit hace [N días]. Estado: [X]. Siguiente paso: [acción].
-- ...
+## 🛑 Stoppers (lo que te frena HOY)
+- **[MAI-XXX] Título** — frenado hace N días. Razón: X. Desbloqueo: 1 acción concreta.
 
-## 🔔 Necesitan respuesta tuya (Slack / DMs)
-Items de trabajo en #clients, #tech-guild, #incidents, DM Javi, DM Samu que te mencionan o esperan tu respuesta. **Solo work-related**, nada personal.
-- `#clients` [fecha] — [resumen work-only] — sugerencia: [acción]
+## ⏳ Pendientes tuyos específicos
+Cosas asignadas a ti con fricción detectada.
+
+## 🔔 Necesitan respuesta tuya (Slack work-only)
+- `#incidents` [fecha] — [resumen work-only] — sugerencia: [acción]
 - DM Javi [fecha] — [ask work-only] — sugerencia: [acción]
-- DM Samu [fecha] — [ask work-only] — sugerencia: [acción]
 
-Chats personales con Javi/Samu: procesados con filtro de privacidad; solo se incluye contenido work-related arriba.
+Chats personales con Javi/Samu: procesados con filtro de privacidad; contenido work-only incluido arriba.
 
 ## 🎯 Top 3 acciones de mayor leverage
-Ordenadas por impacto / tiempo invertido:
-1. [acción concreta, 1 línea]
-2. [acción concreta, 1 línea]
-3. [acción concreta, 1 línea]
+1. [acción, 1 línea]
+2. [acción, 1 línea]
+3. [acción, 1 línea]
 
 ## 📝 Contexto útil detectado
-Cosas que encontré y que podrían interesarte (PRs de otros pendientes de review tuyo, decisiones de tech-guild que afectan tu trabajo en curso, incidentes sin owner):
-- ...
+PRs de otros esperando tu review, decisiones de tech-guild que te afectan, incidentes sin owner, etc.
 ```
 
-Format rules for output 3:
+**Format rules for Output 3:**
 - Directo, sin rodeos, sin filler.
-- Acciones específicas, no generales ("revisa el PR #123" no "atiende los PRs").
-- Si no hay stoppers, decirlo: "Sin stoppers activos detectados. Foco limpio 🟢".
-- Cero personal content. Privacy gate aplica aquí también.
+- Acciones específicas con verbo concreto ("mergear PR #123", no "atender PRs").
+- Si no hay stoppers → "Sin stoppers activos. Foco limpio 🟢".
+- Zero personal content. Privacy gate aplica.
+- **Este output SÍ puede usar PR# y Linear IDs** — es solo para Cristián.
 
 ---
 
-## Notes — reglas críticas
+## Notes — reglas críticas (consolidadas)
 
-### Privacidad (DMs Javi + Samu)
-- Filtro work/personal **conservador**: cuando hay duda, es personal → se descarta.
-- Contenido personal NUNCA aparece en ningún output, ni siquiera como conteo.
-- NO decir cosas como "filtré 12 mensajes personales" — eso es metadata que puede reverse-engineerarse.
-- Sí decir: "Chats personales con Javi/Samu: procesados con filtro de privacidad; contenido work-only incluido" — genérico, sin números.
+### Privacidad DMs Javi + Samu
+- Filtro conservador: duda → personal → descartado.
+- Contenido personal NUNCA aparece, ni como conteo ni metadata.
+- Una línea genérica permitida en Output 3; nada más.
 
 ### Dedup
-- Prefer **false negatives** (dos issues para lo mismo) sobre **false positives** (mergeando cosas distintas).
-- Match conservador por client name + feature anchor, no por title similarity sola.
-- Si hay cualquier duda, keep separate y flag en output 1 como "posible duplicado, revisar manual".
+- Prefer false negatives (2 issues por lo mismo) sobre false positives.
+- Match conservador por client + feature anchor.
+- Duda → keep separate y flag.
 
-### Escribir a Linear
-- Default: `--dry-run` behavior. Esperar confirmación explícita antes de escribir.
-- Confirmación por default hace referencia a operaciones por índice, permite cancelar.
-- `--yes` solo después de varios runs exitosos.
-- Si una operación CREATE falla a medio camino, continuar con las siguientes y reportar el fallo al final. Nunca dejar estado parcial sin reportar.
-- Rollback hint al final del Phase 7 output con los nuevos IDs creados.
+### Granularidad de backfill
+- 1 PR = 1 card. Bundle solo si ≥2 PRs son literalmente una feature cross-repo.
+- Si hay 40 PRs merged → debe haber ~35-40 cards, no 9. Calibración: < PRs × 0.7 = sobre-agrupación.
+
+### Linear writes
+- Default dry-run. Confirmación explícita por índice permitida.
+- `--yes` solo tras varios runs OK.
+- Label group constraint: 1 por grupo. Fetch labels primero.
+- Si CREATE falla mid-stream, continuar y reportar al final.
+- Rollback hint con IDs creados.
+
+### Notion
+- **Solo lectura + updates de estado en cards existentes cuando están desalineadas.**
+- NO crear cards nuevas desde este comando.
+- Linear es el único source of truth.
+
+### Slack messaging (CRITICAL)
+- **Externos (#clients, #incidents, DM Javi, DM Samu, clientes): SIEMPRE draft, nunca send directo.**
+- **Tono no-técnico:** zero PR#, zero Linear IDs, zero nombres de clase/controller, zero jerga.
+- **No ofrecer desarrollo:** si algo no existe → "no lo tenemos", punto. NO "podemos desarrollarlo".
+- **Quick wins sí** pueden ofrecerse si son chicos, reversibles, no rompen nada.
+- **Internos (#tech-guild, DM devs): send directo OK** solo para status updates sin decisiones.
 
 ### Paralelización
-- Phase 1 es embarrassingly parallel. Lanzar Notion + Linear + git + Slack en paralelo.
-- Si la cantidad de canonical items supera 40, paralelizar Phase 4/5 con subagents (uno por bucket).
+- Phase 1 embarrassingly parallel.
+- Si >40 canonical items → paralelizar Phase 4/5 con subagents (1 por bucket).
 
 ### Fuentes offline
-- Si cualquier MCP (Notion, Linear, Slack) o `gh` no responde, NO abortar. Degradar y reportar en un bloque `⚠ Fuentes no disponibles` al inicio de cada output.
-- Nunca fabricar datos para compensar una fuente caída.
+- No abortar: degradar y reportar en `⚠ Fuentes no disponibles` al inicio de cada output.
+- Nunca fabricar datos.
 
 ### Idioma
 - Todos los outputs en Spanish (neutro/chileno).
-- Términos técnicos en inglés permitidos: PR, branch, staging, main, cycle, merge.
+- Términos EN permitidos solo entre devs: PR, branch, staging, cycle, merge.
 - Outputs 2 y 3 más coloquiales. Output 1 más estructurado.
 
-### Sprint 31 + 32 disorder
-- Sin argumento, pullear ambos sprints.
-- Etiquetar cada canonical item con el sprint al que Notion dice que pertenece.
-- NO intentar "arreglar" el disorder mergeando sprints — solo consolidar el contenido en Linear sin tocar la organización de Notion.
-
 ### Safety
-- Este comando NO crea commits, NO hace push, NO modifica git en ningún repo.
-- Solo escribe a Linear (via MCP) y emite texto. Nada más.
-- Si detectas que necesitas hacer algo destructivo, PARA y pregunta.
+- Este comando NO toca git, NO hace commits, NO pushea.
+- Solo escribe a Linear (via MCP) y genera drafts de Slack.
+- Si hay duda sobre algo destructivo → PARA y pregunta.
+
+### Sprint disorder
+- Sin argumento, pullea sprints activos (puede haber más de uno).
+- No intentar "arreglar" el disorder de Notion mergeando sprints; solo consolidar en Linear.
+
+### Calibración retrospectiva
+- Al final de cada run, reportar: "Procesé X PRs, creé Y cards, updated Z, Notion touched W". Si Y/X < 0.7 y no es un run de backfill, warning por sobre-agrupación.
