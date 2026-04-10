@@ -284,6 +284,8 @@ For each Slack thread or DM that needs a response based on the reconciled state,
 
 Spanish neutro/chileno, cálido y profesional. 250-450 palabras. Zero jerga. Zero PR#. Zero Linear IDs. Zero contenido personal.
 
+**Nota dual-audience:** cuando el usuario pide un resumen para un canal mixto (#tech-guild tiene devs + no-devs; #general es todos; #clients es Javi/CS), el reporte debe ser accesible para no-técnicos pero con suficiente señal técnica para devs. **Por default**, aplicar una regla "traducción por tópico": cada sección técnica lleva primero una frase plain-language de 1-2 líneas ("qué significa esto para el cliente") y luego el detalle técnico. Si el canal es puramente no-técnico, omitir el detalle técnico completamente. Si el canal es puramente técnico (#tech-guild con solo devs), lo contrario. Default seguro: dual layer por sección.
+
 ```
 # Sprint [N+M] — review [semana del DD/MM al DD/MM]
 
