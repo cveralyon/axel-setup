@@ -74,15 +74,20 @@ The output is a **Slack draft** in `#tech-guild` (channel C080YP98T44). NOT a di
 - **Contar trabajo de TODOS, no solo de Cristián.** Si Alex mergeó algo hoy, va. Si Emi resolvió un incident, va. Este es un team report.
 - **PRs de staging promote / "Staging" merges** que solo promueven staging→main NO cuentan como features — son operacionales. Si el contenido real ya se reportó antes, skip.
 
-### Tone rules (dual layer)
-- El reporte es para #tech-guild que tiene audiencia mixta (devs + CS + Samu).
-- **Cada item lleva primero una descripción plain-language** (1 línea, sin jerga, entendible por Javi/Samu) y opcionalmente un detalle técnico entre paréntesis para los devs.
-- Ej: "Arreglamos un problema donde las postulaciones desde el portal se perdían si había un error de procesamiento (fix en ApplyLog + ApplyErrorMailer)"
-- **NO usar PR# ni Linear IDs en el cuerpo del mensaje.** Solo en un bloque colapsable al final si alguien quiere los detalles.
+### Tone rules (non-technical first)
+- **La audiencia principal es Samu y Javi.** No son técnicos. Necesitan entender qué avanzó, qué mejoró para los clientes, qué está frenado.
+- **Escribir SIEMPRE en plain-language.** Cada item es 1 frase que responde: "¿qué puede hacer el cliente ahora que antes no podía?" o "¿qué problema ya no va a tener?".
+- **NUNCA mencionar:** PR#, Linear IDs (MAI-X), nombres de clase, branch names, nombres de servicios internos, jerga técnica de ningún tipo.
+- **Ejemplos:**
+  - ❌ "Mergeamos PR #462 fix (ProcessCvSubmissionJob): Deduplicate apply_portals candidates by email/phone"
+  - ✅ "Arreglamos un problema donde las candidaturas de Infojobs se duplicaban dentro del proceso"
+  - ❌ "Fix SSRF allowlist guard en server-side fetchWithAuth"
+  - ✅ "Cerramos una vulnerabilidad de seguridad en el servidor"
+- **Si los devs quieren detalle técnico**, pueden preguntar o revisar #tech-guild / Linear directamente. El EOD review NO es para ellos, es para visibilidad de negocio.
 
 ### Delivery rules
 - **Siempre draft, nunca send directo.**
-- **Tag `@here`** al inicio si hay items importantes (deploys grandes, incidents, stoppers nuevos). Omitir si es un día tranquilo.
+- **Tag `@here`** al inicio solo si hay algo bloqueante o un deploy grande con impacto en clientes. No abusar.
 - **Corto.** Target: 10-15 líneas. Máximo 25 líneas. Si el día fue largo, priorizar los 5 items más importantes y cerrar con "y N items más de mantenimiento/bugfixes menores".
 
 ### Reminder
