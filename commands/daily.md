@@ -77,8 +77,32 @@ Top 3 acciones de mayor leverage basadas en lo detectado arriba.
 3. [acción concreta]
 ```
 
+## Phase 2 — Sync systems (after showing the briefing)
+
+After presenting the morning briefing to the user, propose system updates detected during the scan. Wait for user confirmation before executing.
+
+### What to detect and propose:
+
+**Linear updates:**
+- Issues that should move to Done based on git evidence (PR merged to main but Linear still says In Progress/In Review)
+- New items detected in Slack (#incidents, #clients) that don't have a Linear issue yet → propose CREATE
+- Issues with stale status (no git activity in 7+ days but still marked In Progress) → flag for user
+- Assignee mismatches (git author ≠ Linear assignee) → propose UPDATE_ASSIGNEE
+
+**Notion updates (existing cards only):**
+- Cards in Notion whose status is stale vs the reconciled state (e.g. Notion says "In Progress" but Linear/git says Done) → propose update_properties
+
+**Slack drafts:**
+- Threads in #incidents or #clients that need a response → propose drafts (following CS tone rules: tag Javi, plain-language, no dev offers)
+
+### Execution:
+- Print the proposed updates as a numbered list
+- Wait for: `apply all`, `apply 1,3,5`, or `skip`
+- If user says nothing about syncing, skip — don't block the morning
+
 ## Rules
-- **Read-only.** No escribe en Linear, no escribe en Slack, no crea issues, no postea nada.
+- **Phase 1 (briefing) is read-only.** The briefing output itself never writes to any system.
+- **Phase 2 (sync) proposes writes** but waits for explicit confirmation before executing.
 - **Rápido.** Parallelize todo. El output debe ser corto y escaneable.
 - **Si no hay novedades en un canal, decir "sin novedades" y seguir.** No llenar con texto de relleno.
 - **Privacy gate aplica** igual que en sprint-status.
