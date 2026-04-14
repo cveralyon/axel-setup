@@ -1,44 +1,85 @@
-# EOD Review — End-of-Day report para #tech-guild
+# EOD Review — End-of-Day team report
 
-Genera un reporte de fin de día con todo lo que se hizo, cambió y avanzó HOY. Diseñado para cumplir con el pedido de Samu del 10/04: "Recordad mandar un reporte de todos los updates al final del día para poder actualizar el Product Drop."
+Generate an end-of-day report with everything that was done, changed, or moved TODAY. Designed to give non-technical stakeholders (CEO, PM, CS lead) clear visibility into delivery progress without requiring them to read PRs or Linear.
 
-El output es un **draft en #tech-guild** listo para que Cristián revise y envíe. Incluye una versión dual: detalle técnico para devs + resumen plain-language para CS/Samu.
+The output is a **Slack draft** (never a direct send) ready for the user to review and post. When the target channel is mixed (devs + non-devs), a dual layer is produced: non-technical summary on top, optional technical detail below.
+
+## Configuration (edit this section for your team)
+
+Before using this skill, edit the YAML block below with your team's channels, repos, and target audience. Sections marked `[OPTIONAL]` can be deleted if your team does not use that system.
+
+```yaml
+# --- Target channel for the draft (where the report will be posted) ---
+target_channel:
+  name: "#tech-guild"     # id: Cxxxxxxx
+  audience: "mixed"        # "mixed" | "technical" | "non-technical"
+
+# --- Slack channels to scan for context on what happened today ---
+slack_channels:
+  - name: "#incidents"
+  - name: "#tech-guild"
+  - name: "#clients"
+
+# --- Git repos to scan for "what was done today" ---
+git_repos:
+  - ~/your-org/api-repo
+  - ~/your-org/frontend-repo
+
+# --- Team member git-email → display-name mapping ---
+team_members:
+  - { email: "you@company.com", name: "You" }
+  - { email: "teammate@company.com", name: "Teammate" }
+
+# --- Optional integrations ---
+integrations:
+  linear: true            # requires Linear MCP
+  intercom: false         # [OPTIONAL] requires Intercom MCP — client-facing metrics
+  notion: false           # [OPTIONAL] never queried from this command
+```
 
 ## When to use
 
-- Al final de la jornada (~18:00 hora Chile) antes de cerrar.
-- Cuando Samu o Javi piden "qué se hizo hoy".
-- Antes de un standup o sync rápido donde necesitas mostrar avance del día.
+- At the end of the workday, before closing
+- When your PM/CEO asks "what was done today"
+- Before a standup or sync where you need to show daily progress
 
 ## Data sources (all read-only, all in parallel)
 
 ### Git (primary source for "what was done today")
-- For each Mainder repo: `git fetch origin --prune`
+For each repo in `git_repos`:
+- `git fetch origin --prune`
 - PRs merged TODAY by anyone: `gh pr list --state merged --search "merged:>=TODAY"`
 - PRs opened TODAY
 - Commits pushed to staging/feature branches TODAY
-- Author mapping via the team member table (git email → name)
+- Map authors via `team_members` (git email → display name)
 
-### Linear
+### Linear (if `integrations.linear`)
 - Issues moved to Done today
 - Issues moved to In Progress today (started)
 - New issues created today
 - Comments added today
 
-### Slack (secondary — for context on what happened)
-- `#incidents` — any new incidents today, resolved or open
-- `#tech-guild` — any important messages (Samu asks, Javi asks, decisions)
-- `#clients` — new client requests today (count + brief summary)
+### Slack (secondary — for context)
+For each channel in `slack_channels`:
+- Any new incidents today (resolved or open)
+- Important messages (asks from leadership, decisions)
+- New client requests today (count + brief summary)
 
-### Notion
+### Intercom `[OPTIONAL]` (if `integrations.intercom` — primary source for client-facing metrics)
+- Conversations with activity TODAY: `mcp__intercom__search_conversations` filtered by `updated_at >= today`
+- Count: created today / resolved today / still open / priority flagged
+- Cross-ref with Slack client channels: every forwarded thread should have its real conversation in Intercom — confirm counts match. If Slack > Intercom, flag "possible phantom forward or deleted conversation". If Intercom > Slack, flag "tickets not visible in Slack"
+- For each conversation resolved today: one plain-language line describing the fix (input for the "Delivered today" section)
+
+### Notion `[OPTIONAL]`
 - Not queried. Linear is the source of truth.
 
 ## Privacy gate
-Same as sprint-status. DMs are NOT scanned for EOD review — only channel content.
+Same as `/sprint-status`. DMs are NOT scanned for EOD review — only channel content.
 
 ## Output format
 
-The output is a **Slack draft** in `#tech-guild` (channel C080YP98T44). NOT a direct send.
+The output is a **Slack draft** in `target_channel`. **NOT a direct send.**
 
 ```
 📋 *EOD Review — [fecha]*
@@ -55,12 +96,14 @@ The output is a **Slack draft** in `#tech-guild` (channel C080YP98T44). NOT a di
 *🐛 Incidents*
 • [resumen o "Sin incidents nuevos hoy ✅"]
 
-*📬 Requests de clientes nuevas*
-• [count] nuevas en #clients: [resumen brevísimo]
-(o "Sin requests nuevas")
+*📬 Requests de clientes*    [OPTIONAL section — show only if Intercom OR client channels enabled]
+• [N] conversations nuevas hoy · [M] resueltas hoy · [K] abiertas pendientes
+• Top nuevas (plain-language): [1-3 líneas]
+• ⚠ Si hay mismatch Intercom↔Slack, flag aquí
+(o "Sin requests nuevas ✅")
 
 *🔴 Stoppers*
-• [MAI-XX] — [razón] — [días frenado]
+• [ISSUE-ID] — [razón] — [días frenado]
 (o "Sin stoppers 🟢")
 
 *🎯 Foco mañana*
@@ -70,31 +113,42 @@ The output is a **Slack draft** in `#tech-guild` (channel C080YP98T44). NOT a di
 ## Rules
 
 ### Content rules
-- **Solo lo de HOY.** No repetir lo de ayer ni hacer resumen semanal — para eso existe `/sprint-status`.
-- **Contar trabajo de TODOS, no solo de Cristián.** Si Alex mergeó algo hoy, va. Si Emi resolvió un incident, va. Este es un team report.
-- **PRs de staging promote / "Staging" merges** que solo promueven staging→main NO cuentan como features — son operacionales. Si el contenido real ya se reportó antes, skip.
+- **Only TODAY.** Do not repeat yesterday or summarize the week — use `/sprint-status` for that.
+- **Count work from THE WHOLE TEAM, not just the user.** If a teammate merged something today, it goes in. If another teammate resolved an incident, it goes in. This is a team report.
+- **Staging-promote PRs** (branches that only promote staging → main) do NOT count as features — they are operational. If the real content was already reported earlier, skip.
 
-### Tone rules (non-technical first)
-- **La audiencia principal es Samu y Javi.** No son técnicos. Necesitan entender qué avanzó, qué mejoró para los clientes, qué está frenado.
-- **Escribir SIEMPRE en plain-language.** Cada item es 1 frase que responde: "¿qué puede hacer el cliente ahora que antes no podía?" o "¿qué problema ya no va a tener?".
-- **NUNCA mencionar:** PR#, Linear IDs (MAI-X), nombres de clase, branch names, nombres de servicios internos, jerga técnica de ningún tipo.
-- **Ejemplos:**
-  - ❌ "Mergeamos PR #462 fix (ProcessCvSubmissionJob): Deduplicate apply_portals candidates by email/phone"
-  - ✅ "Arreglamos un problema donde las candidaturas de Infojobs se duplicaban dentro del proceso"
-  - ❌ "Fix SSRF allowlist guard en server-side fetchWithAuth"
-  - ✅ "Cerramos una vulnerabilidad de seguridad en el servidor"
-- **Si los devs quieren detalle técnico**, pueden preguntar o revisar #tech-guild / Linear directamente. El EOD review NO es para ellos, es para visibilidad de negocio.
+### Tone rules (audience-aware)
+
+The tone adapts to `target_channel.audience`:
+
+**If `audience: "non-technical"`** (CEO, PM, CS, investors):
+- **Always plain-language.** Each item answers: "what can the customer do now that they couldn't before?" or "what problem do they no longer have?"
+- **NEVER mention:** PR#, ticket IDs, class/service names, branch names, internal jargon.
+- Examples:
+  - ❌ "Merged PR #462 fix (ProcessCvSubmissionJob): Deduplicate apply_portals candidates by email/phone"
+  - ✅ "Fixed a problem where candidates arriving from InfoJobs were duplicated inside the hiring process"
+  - ❌ "Fix SSRF allowlist guard in server-side fetchWithAuth"
+  - ✅ "Closed a server-side security vulnerability"
+- Short. Target: 10-15 lines. Max 25 lines. If the day was long, prioritize the 5 most important items and close with "plus N minor maintenance/bugfix items".
+
+**If `audience: "technical"`** (dev-only channel):
+- Can use PR#, ticket IDs, branch names, jargon.
+- Still keep it concise — readers already know the context.
+
+**If `audience: "mixed"`** (dev channel that is also read by leadership/CS):
+- **Dual layer**: for each section, lead with a 1-2 line plain-language translation, then optionally follow with the technical detail underneath.
+- This is the safest default when you're not sure who reads the channel.
 
 ### Delivery rules
-- **Siempre draft, nunca send directo.**
-- **Tag `@here`** al inicio solo si hay algo bloqueante o un deploy grande con impacto en clientes. No abusar.
-- **Corto.** Target: 10-15 líneas. Máximo 25 líneas. Si el día fue largo, priorizar los 5 items más importantes y cerrar con "y N items más de mantenimiento/bugfixes menores".
+- **Always draft, never direct send.** Applies to every channel, no exceptions. The user is the only sender from Slack.
+- **Tag `@here`** at the top only if there's a blocker or a large deploy with customer impact. Don't abuse.
+- **Short and scannable.** See target length per audience above.
 
 ### Reminder
-- **Cristián tiene que enviar esto antes de las 18:00 Chile** (Samu lo pidió explícitamente). Si este skill se ejecuta y ya pasaron las 18:00, mencionarlo al inicio: "⚠ Este reporte debió haberse enviado antes de las 18:00."
-- El skill `/daily` (morning check) debe recordar al usuario que tiene que correr `/eod-review` al final del día.
+- Send the report before the end of the workday while context is fresh.
+- The `/daily` morning skill can remind the user to run `/eod-review` at the end of the day.
 
 ## Relationship with other skills
-- **`/daily`** — el check de la mañana (qué pasó, qué necesita atención). `/eod-review` es el cierre de la tarde (qué se hizo).
-- **`/sprint-status`** — el audit semanal pesado. `/eod-review` es el micro-reporte diario.
-- **Los dos se complementan:** `/daily` por la mañana → trabaja todo el día → `/eod-review` a las 18:00 → enviar a #tech-guild.
+- **`/daily`** — morning check (what happened, what needs attention). `/eod-review` is the afternoon close (what was done).
+- **`/sprint-status`** — heavy weekly audit. `/eod-review` is the micro daily report.
+- **Both complement each other:** `/daily` in the morning → work all day → `/eod-review` at 18:00 → draft to team channel.
