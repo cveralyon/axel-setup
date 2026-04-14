@@ -1,6 +1,13 @@
 #!/bin/bash
 # Extract key decisions and learnings from session and persist to memory.
 # Runs async from Stop hook. Uses Sonnet for quality extraction.
+#
+# Ghost-session cleanup: Claude Code v2.1.x has a bug where
+# --no-session-persistence does NOT prevent the JSONL from being written to
+# ~/.claude/projects/. The workaround is to run the subprocess from a temporary
+# cwd (so its JSONL lands in a bucket unique to this hook) and rm -rf both the
+# tmp cwd and its projects/ bucket when done. Memory output still lands in
+# ~/.claude/memory/, which is completely unaffected.
 
 set -e
 INPUT=$(cat)
@@ -93,7 +100,17 @@ Current memory (to avoid duplicates):
 Session conversation:
 %s' "$CURRENT_MEMORY" "$CONVERSATION")
 
-  EXTRACTION=$(printf '%s' "$PROMPT" | claude -p --model sonnet --no-session-persistence 2>/dev/null)
+  HOOK_TMP=$(mktemp -d 2>/dev/null)
+  HOOK_TMP_REAL=$(cd "$HOOK_TMP" 2>/dev/null && pwd -P)
+  EXTRACTION=$(cd "$HOOK_TMP" 2>/dev/null && printf '%s' "$PROMPT" | claude -p --model sonnet 2>/dev/null)
+
+  # Cleanup the ghost session JSONL bucket that claude -p created.
+  # Claude slugifies the cwd by replacing any non-alphanumeric char with '-',
+  # so use pwd -P (resolved physical path) and the same regex to reconstruct it.
+  if [ -n "$HOOK_TMP_REAL" ]; then
+    GHOST_SLUG=$(echo "$HOOK_TMP_REAL" | sed 's|[^a-zA-Z0-9]|-|g')
+    rm -rf "$HOOK_TMP" "$HOME/.claude/projects/${GHOST_SLUG}" 2>/dev/null
+  fi
 
   if [ -z "$EXTRACTION" ] || echo "$EXTRACTION" | grep -qi "NOTHING"; then
     exit 0

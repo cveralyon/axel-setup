@@ -1,8 +1,13 @@
 #!/bin/bash
 # Periodic session checkpoint: every ~40 tool calls, summarize what's happened
 # since the last checkpoint. Uses Sonnet for quality. Runs async — non-blocking.
-# --no-session-persistence prevents ghost sessions (only affects THIS subprocess,
-# NOT the main session or memory system).
+#
+# Ghost-session cleanup: Claude Code v2.1.x has a bug where
+# --no-session-persistence does NOT prevent the JSONL from being written to
+# ~/.claude/projects/. The workaround is to run the subprocess from a temporary
+# cwd (so its JSONL lands in a bucket unique to this hook) and rm -rf both the
+# tmp cwd and its projects/ bucket when done. This leaves zero residue in the
+# /resume history while keeping checkpoint output intact in ~/.claude/sessions/.
 
 PROJECT_NAME=$(basename "$(pwd)")
 COUNTER_FILE="/tmp/claude-checkpoint-counter-${PROJECT_NAME}"
@@ -55,9 +60,19 @@ if [ -z "$RECENT_ACTIONS" ] && [ -z "$GIT_DIFF" ]; then
   exit 0
 fi
 
-# Summarize this chunk with Sonnet in background
+# Summarize this chunk with Sonnet in background (cwd-isolated — see header comment)
 {
-  SUMMARY=$(printf "Resume este checkpoint de trabajo (#%s) en español. Máximo 15 líneas. Sé conciso pero completo.\n\nIncluye: qué se hizo, decisiones tomadas, archivos clave, contexto importante.\n\nAcciones recientes:\n%s\n\nGit:\n%s" "$CHECKPOINT_NUM" "$RECENT_ACTIONS" "$GIT_DIFF" | claude -p --model sonnet --no-session-persistence 2>/dev/null)
+  HOOK_TMP=$(mktemp -d 2>/dev/null)
+  HOOK_TMP_REAL=$(cd "$HOOK_TMP" 2>/dev/null && pwd -P)
+  SUMMARY=$(cd "$HOOK_TMP" 2>/dev/null && printf "Resume este checkpoint de trabajo (#%s) en español. Máximo 15 líneas. Sé conciso pero completo.\n\nIncluye: qué se hizo, decisiones tomadas, archivos clave, contexto importante.\n\nAcciones recientes:\n%s\n\nGit:\n%s" "$CHECKPOINT_NUM" "$RECENT_ACTIONS" "$GIT_DIFF" | claude -p --model sonnet 2>/dev/null)
+
+  # Cleanup the ghost session JSONL bucket that claude -p created.
+  # Claude slugifies the cwd by replacing any non-alphanumeric char with '-',
+  # so use pwd -P (resolved physical path) and the same regex to reconstruct it.
+  if [ -n "$HOOK_TMP_REAL" ]; then
+    GHOST_SLUG=$(echo "$HOOK_TMP_REAL" | sed 's|[^a-zA-Z0-9]|-|g')
+    rm -rf "$HOOK_TMP" "$HOME/.claude/projects/${GHOST_SLUG}" 2>/dev/null
+  fi
 
   if [ -n "$SUMMARY" ]; then
     CHECKPOINT_FILE="$CHECKPOINT_DIR/${PROJECT_NAME}_${TIMESTAMP}_cp${CHECKPOINT_NUM}.md"

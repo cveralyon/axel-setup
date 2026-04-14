@@ -1,6 +1,13 @@
 #!/bin/bash
 # Final session summarizer: compiles checkpoints + conversation into
 # one coherent session summary. Uses Sonnet for quality. Runs async from Stop hook.
+#
+# Ghost-session cleanup: Claude Code v2.1.x has a bug where
+# --no-session-persistence does NOT prevent the JSONL from being written to
+# ~/.claude/projects/. The workaround is to run the subprocess from a temporary
+# cwd (so its JSONL lands in a bucket unique to this hook) and rm -rf both the
+# tmp cwd and its projects/ bucket when done. The summary output still lands in
+# ~/.claude/sessions/, which is what session-restore reads on the next startup.
 
 set -e
 INPUT=$(cat)
@@ -62,9 +69,11 @@ if [ -z "$CHECKPOINTS" ] && [ -z "$CONVERSATION" ] && [ -z "$GIT_INFO" ]; then
   exit 0
 fi
 
-# 4. Compile final summary with Sonnet
+# 4. Compile final summary with Sonnet (cwd-isolated — see header comment)
 {
-  SUMMARY=$(printf "You are an assistant that summarizes programming work sessions. Compile a coherent final summary.
+  HOOK_TMP=$(mktemp -d 2>/dev/null)
+  HOOK_TMP_REAL=$(cd "$HOOK_TMP" 2>/dev/null && pwd -P)
+  SUMMARY=$(cd "$HOOK_TMP" 2>/dev/null && printf "You are an assistant that summarizes programming work sessions. Compile a coherent final summary.
 
 You have 2 sources:
 - Checkpoints (partial summaries made during the session)
@@ -87,7 +96,15 @@ Recent conversation:
 %s
 
 Git:
-%s" "$CHECKPOINTS" "$CONVERSATION" "$GIT_INFO" | claude -p --model sonnet --no-session-persistence 2>/dev/null)
+%s" "$CHECKPOINTS" "$CONVERSATION" "$GIT_INFO" | claude -p --model sonnet 2>/dev/null)
+
+  # Cleanup the ghost session JSONL bucket that claude -p created.
+  # Claude slugifies the cwd by replacing any non-alphanumeric char with '-',
+  # so use pwd -P (resolved physical path) and the same regex to reconstruct it.
+  if [ -n "$HOOK_TMP_REAL" ]; then
+    GHOST_SLUG=$(echo "$HOOK_TMP_REAL" | sed 's|[^a-zA-Z0-9]|-|g')
+    rm -rf "$HOOK_TMP" "$HOME/.claude/projects/${GHOST_SLUG}" 2>/dev/null
+  fi
 
   if [ -z "$SUMMARY" ]; then
     SUMMARY="## Checkpoints
