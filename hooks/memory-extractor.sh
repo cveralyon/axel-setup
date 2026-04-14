@@ -10,6 +10,24 @@
 # ~/.claude/memory/, which is completely unaffected.
 
 set -e
+
+# Guard: prevent recursive invocation. This script spawns `claude -p`, which
+# fires Stop hooks again when it finishes. Without this guard the hook loops
+# infinitely (each ghost session triggering another extraction).
+if [ -n "$CLAUDE_MEMORY_EXTRACTOR" ]; then
+  exit 0
+fi
+
+# Bootstrap substitutes these placeholders at install time via --user-context
+# and --language flags. The `case` fallback kicks in when the script runs
+# without bootstrap: sed never replaced the token, so it still starts with
+# `{{` and ends with `}}`. (We cannot compare against the literal token here
+# — bootstrap's sed would rewrite both sides of the comparison at install.)
+USER_CONTEXT="{{USER_CONTEXT}}"
+case "$USER_CONTEXT" in "{{"*"}}"|"") USER_CONTEXT="a software engineer" ;; esac
+ASSISTANT_LANGUAGE="{{ASSISTANT_LANGUAGE}}"
+case "$ASSISTANT_LANGUAGE" in "{{"*"}}"|"") ASSISTANT_LANGUAGE="english" ;; esac
+
 INPUT=$(cat)
 
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty')
@@ -75,7 +93,9 @@ fi
 
 # Use Sonnet to extract decisions worth remembering
 {
-  PROMPT=$(printf 'You are an intelligent memory extractor for a programming assistant. Analyze the session conversation and determine if there is valuable information that should persist in memory for future sessions.
+  PROMPT=$(printf 'You are an intelligent memory extractor for a programming assistant. Analyze the session conversation and determine if there is valuable information that should persist in memory for future sessions. Respond in %s.
+
+The user is %s.
 
 MEMORY TYPES:
 - user: info about the user (role, preferences, skills, personal context)
@@ -84,12 +104,13 @@ MEMORY TYPES:
 - reference: where to find info in external systems (URLs, IDs, channels)
 
 STRICT RULES:
-- Only extract NON-OBVIOUS information that cannot be derived by reading the code
-- Do not duplicate what already exists in current memory (check the index)
-- For feedback and project types, include **Why:** and **How to apply:**
+- Only extract NON-OBVIOUS information that cannot be derived by reading the code.
+- DEDUPLICATION: walk the full MEMORY.md index before creating anything. If a topic is already covered by an existing memory — even under a different name, or as part of a consolidated entry — do NOT create a new one. What matters is whether the INFORMATION is already captured, not whether the filename matches.
+- For feedback and project types, include **Why:** and **How to apply:** lines.
 - If nothing significant to persist, respond EXACTLY: NOTHING
-- If something exists, respond in JSON array format (max 2 entries per session)
-- Filenames must be descriptive: type_topic.md (e.g.: project_people_finder_v2.md)
+- If something exists, respond in JSON array format (max 2 entries per session).
+- Filenames must be descriptive: type_topic.md (e.g.: project_people_finder_v2.md).
+- Keep index_line descriptions under 60 characters.
 
 JSON format when there is something:
 [{"filename": "type_topic.md", "name": "Descriptive name", "description": "One line for MEMORY.md index", "type": "user|feedback|project|reference", "content": "Full memory content", "index_line": "- [Name](type_topic.md) — short description"}]
@@ -98,11 +119,11 @@ Current memory (to avoid duplicates):
 %s
 
 Session conversation:
-%s' "$CURRENT_MEMORY" "$CONVERSATION")
+%s' "$ASSISTANT_LANGUAGE" "$USER_CONTEXT" "$CURRENT_MEMORY" "$CONVERSATION")
 
   HOOK_TMP=$(mktemp -d 2>/dev/null)
   HOOK_TMP_REAL=$(cd "$HOOK_TMP" 2>/dev/null && pwd -P)
-  EXTRACTION=$(cd "$HOOK_TMP" 2>/dev/null && printf '%s' "$PROMPT" | claude -p --model sonnet 2>/dev/null)
+  EXTRACTION=$(cd "$HOOK_TMP" 2>/dev/null && printf '%s' "$PROMPT" | CLAUDE_MEMORY_EXTRACTOR=1 claude -p --model sonnet 2>/dev/null)
 
   # Cleanup the ghost session JSONL bucket that claude -p created.
   # Claude slugifies the cwd by replacing any non-alphanumeric char with '-',

@@ -33,6 +33,8 @@ CLAUDE_DIR="$HOME/.claude"
 BACKUP_DIR="$CLAUDE_DIR/backups/pre-axel-$(date +%Y%m%d_%H%M%S)"
 DRY_RUN=false
 USER_NAME=""
+USER_CONTEXT=""
+ASSISTANT_LANGUAGE=""
 
 # Counters
 HOOKS_ADDED=0
@@ -63,16 +65,22 @@ upgrade() { printf "${YELLOW}  upgrade: %s (saved for review)${RESET}\n" "$1"; }
 while [[ $# -gt 0 ]]; do
   case $1 in
     --user-name) USER_NAME="$2"; shift 2 ;;
+    --user-context) USER_CONTEXT="$2"; shift 2 ;;
+    --language) ASSISTANT_LANGUAGE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
     -h|--help)
-      echo "Usage: bash bootstrap.sh [--user-name \"Tu Nombre\"] [--dry-run]"
+      echo "Usage: bash bootstrap.sh [options]"
       echo ""
       echo "This script is ADDITIVE — it only adds new things, never overwrites."
       echo "Your existing memory, settings, hooks, and CLAUDE.md are preserved."
       echo ""
       echo "Options:"
-      echo "  --user-name NAME   Your name (used in session summaries)"
-      echo "  --dry-run          Show what would be done without doing it"
+      echo "  --user-name NAME        Your name (used in session summaries)"
+      echo "  --user-context TEXT     Short self-description used in hook prompts,"
+      echo "                          e.g. 'Tech Lead at Acme, backend-focused'"
+      echo "  --language LANG         Language the assistant should respond in inside"
+      echo "                          hook-generated prompts (e.g. 'spanish', 'english')"
+      echo "  --dry-run               Show what would be done without doing it"
       exit 0
       ;;
     *) error "Unknown option: $1"; exit 1 ;;
@@ -117,6 +125,15 @@ if [ -z "$USER_NAME" ]; then
     warn "Using system username: $USER_NAME"
   fi
 fi
+
+# --- Defaults for user context and language (never prompt, just fall back) ---
+if [ -z "$USER_CONTEXT" ]; then
+  USER_CONTEXT="a software engineer"
+fi
+if [ -z "$ASSISTANT_LANGUAGE" ]; then
+  ASSISTANT_LANGUAGE="english"
+fi
+info "Hook prompts will address you as: $USER_CONTEXT (responses in $ASSISTANT_LANGUAGE)"
 
 # --- Dry run guard ---
 run() {
@@ -186,9 +203,14 @@ for hook_file in "$SCRIPT_DIR/hooks/"*; do
   BASENAME=$(basename "$hook_file")
   DEST="$CLAUDE_DIR/hooks/$BASENAME"
 
-  # Hooks need USER_NAME substitution, so we use a temp file for comparison
+  # Hooks need placeholder substitution, so we use a temp file for comparison.
+  # Keep the sed list in sync with any new {{PLACEHOLDER}} added to hook files.
   PROCESSED=$(mktemp)
-  sed "s|{{USER_NAME}}|$USER_NAME|g" "$hook_file" > "$PROCESSED"
+  sed \
+    -e "s|{{USER_NAME}}|$USER_NAME|g" \
+    -e "s|{{USER_CONTEXT}}|$USER_CONTEXT|g" \
+    -e "s|{{ASSISTANT_LANGUAGE}}|$ASSISTANT_LANGUAGE|g" \
+    "$hook_file" > "$PROCESSED"
 
   if [ -f "$DEST" ]; then
     if ! diff -q "$PROCESSED" "$DEST" >/dev/null 2>&1; then

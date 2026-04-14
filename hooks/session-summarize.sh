@@ -22,9 +22,17 @@ CHECKPOINT_DIR="$SESSION_DIR/checkpoints"
 TIMESTAMP=$(date +%Y-%m-%d_%H%M)
 SESSION_FILE="$SESSION_DIR/${PROJECT_NAME}_${TIMESTAMP}.md"
 
-# Read user name from config or fallback to system user
+# Bootstrap substitutes these placeholders at install time via --user-name,
+# --user-context and --language flags. The `case` fallback kicks in when the
+# script runs without bootstrap: sed never replaced the token, so it still
+# starts with `{{` and ends with `}}`. (We cannot compare against the literal
+# token here — bootstrap's sed would rewrite both sides of the comparison.)
 USER_NAME="{{USER_NAME}}"
-[ "$USER_NAME" = '{{USER_NAME}}' ] && USER_NAME=$(whoami)
+case "$USER_NAME" in "{{"*"}}"|"") USER_NAME=$(whoami) ;; esac
+USER_CONTEXT="{{USER_CONTEXT}}"
+case "$USER_CONTEXT" in "{{"*"}}"|"") USER_CONTEXT="a software engineer" ;; esac
+ASSISTANT_LANGUAGE="{{ASSISTANT_LANGUAGE}}"
+case "$ASSISTANT_LANGUAGE" in "{{"*"}}"|"") ASSISTANT_LANGUAGE="english" ;; esac
 
 mkdir -p "$SESSION_DIR"
 
@@ -73,7 +81,7 @@ fi
 {
   HOOK_TMP=$(mktemp -d 2>/dev/null)
   HOOK_TMP_REAL=$(cd "$HOOK_TMP" 2>/dev/null && pwd -P)
-  SUMMARY=$(cd "$HOOK_TMP" 2>/dev/null && printf "You are an assistant that summarizes programming work sessions. Compile a coherent final summary.
+  SUMMARY=$(cd "$HOOK_TMP" 2>/dev/null && printf "You are an assistant that summarizes programming work sessions for %s (%s). Compile a coherent final summary. Respond in %s.
 
 You have 2 sources:
 - Checkpoints (partial summaries made during the session)
@@ -96,7 +104,7 @@ Recent conversation:
 %s
 
 Git:
-%s" "$CHECKPOINTS" "$CONVERSATION" "$GIT_INFO" | claude -p --model sonnet 2>/dev/null)
+%s" "$USER_NAME" "$USER_CONTEXT" "$ASSISTANT_LANGUAGE" "$CHECKPOINTS" "$CONVERSATION" "$GIT_INFO" | claude -p --model sonnet 2>/dev/null)
 
   # Cleanup the ghost session JSONL bucket that claude -p created.
   # Claude slugifies the cwd by replacing any non-alphanumeric char with '-',

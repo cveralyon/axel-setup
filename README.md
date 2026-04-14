@@ -22,6 +22,19 @@ cd axel-setup
 bash bootstrap.sh --user-name "Your Name"
 ```
 
+Advanced: pass extra context so the Stop hooks personalize their prompts:
+
+```bash
+bash bootstrap.sh \
+  --user-name "Emiliano" \
+  --user-context "Backend engineer at Acme, Python specialist" \
+  --language spanish
+```
+
+- `--user-context` gives the memory-extractor and session-summarize hooks a short self-description so their summaries frame decisions around your role. Defaults to `a software engineer`.
+- `--language` tells the same hooks which language to respond in when they generate summaries (so non-English speakers get Spanish/French/etc. summaries back). Defaults to `english`.
+- Both are optional and reversible — re-run the bootstrap with different values to update. The substitutions happen at install time (sed over the hook files), not at runtime.
+
 ```bash
 # Preview what it does without changing anything:
 bash bootstrap.sh --dry-run
