@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"$TOOL_INPUT\" | grep -qE 'git commit' && echo \"$TOOL_INPUT\" | grep -qvE '^(feat|fix|chore|refactor|test|docs|style|perf|ci|build|revert)\\s*\\(' && echo 'WARNING: Incorrect commit format. Use: type (Model/File): Message — valid types: feat|fix|chore|refactor|test|docs|style|perf|ci|build|revert' >&2 && exit 1 || exit 0"
+            "command": "bash $HOME/.claude/hooks/validate-commit-format.sh"
           }
         ]
       },
@@ -134,7 +134,26 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/session-auto-title.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/session-cost-log.sh",
+            "async": true
+          }
+        ]
+      },
       {
         "hooks": [
           {
@@ -199,7 +218,6 @@
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
-    "code-review@claude-plugins-official": true,
     "ruby-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
@@ -211,6 +229,8 @@
   },
   "language": "spanish",
   "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
+  "autoCompactWindow": 1000000,
   "promptSuggestionEnabled": true,
   "voiceEnabled": true,
   "channelsEnabled": true,
@@ -218,6 +238,5 @@
   "autoMemoryDirectory": "~/.claude/memory",
   "autoDreamEnabled": true,
   "showThinkingSummaries": true,
-  "skipDangerousModePermissionPrompt": true,
-  "autoCompactWindow": 1000000
+  "skipDangerousModePermissionPrompt": true
 }
