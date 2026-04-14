@@ -35,6 +35,25 @@ bash bootstrap.sh \
 - `--language` tells the same hooks which language to respond in when they generate summaries (so non-English speakers get Spanish/French/etc. summaries back). Defaults to `english`.
 - Both are optional and reversible — re-run the bootstrap with different values to update. The substitutions happen at install time (sed over the hook files), not at runtime.
 
+### Optional: PostHog product analytics integration
+
+If your team uses PostHog and you have the [PostHog MCP](https://posthog.com/docs/mcp) connected, AXEL can install the `/posthog-weekly` skill — an analytical review of your product analytics workspace that finds anomalies, regressions, and improvement opportunities (not a metric dashboard, an actual analyst).
+
+```bash
+bash bootstrap.sh \
+  --user-name "Your Name" \
+  --enable-posthog \
+  --posthog-context "Acme ATS — recruiting platform with AI sourcing"
+```
+
+What `--enable-posthog` installs:
+- **`/posthog-weekly` skill** — pulls dashboards, insights, events, errors, and cohorts from PostHog; identifies dead events, regressions, error backlog, instrumentation gaps, and suggested cohorts; persists a 14-day cached snapshot for other commands to read.
+- **`scripts/posthog-snapshot-loader.sh`** — bash helper that reads the cached snapshot and prints a markdown summary. Sourceable from any other command (e.g. `/sprint-status`, `/eod-review`, `/daily`) so they include the latest PostHog findings without re-querying.
+
+What `--posthog-context` does: it gets substituted into the skill's prompt so the analytical lens knows what kind of product it's looking at. A good context is one sentence: name + product type + key features. Example: `"Acme ATS — recruiting platform with AI sourcing (People Finder, AI Hunt)"`. Defaults to a generic placeholder if omitted.
+
+The skill is **gated**: without `--enable-posthog`, neither the skill nor the helper script are installed. So teams that don't use PostHog don't get extra files in their `~/.claude/`.
+
 ```bash
 # Preview what it does without changing anything:
 bash bootstrap.sh --dry-run
@@ -155,12 +174,13 @@ watch -n 10 -c ~/.claude/tools/session-live.sh
 - The `5h-sesion` column shows how much of the limit **this specific session** consumed (`end% - start%`)
 - The status bar shows both: `5h:22% (+3.2%)` = 22% total, this session used 3.2%
 
-### Skills (2)
+### Skills (2 + 1 optional)
 
 Multi-file skills with data and scripts:
 
 - **memory-review** — Review, optimize, and deduplicate the persistent memory system
 - **ui-ux-pro-max** — UI/UX design intelligence with 67 styles, 96 palettes, 57 font pairings, 25 chart types, 13 frontend stacks
+- **posthog-weekly** _(optional, requires `--enable-posthog` at install)_ — Weekly analytical review of your PostHog workspace. Finds dead events, regressions, instrumentation gaps, error triage debt; suggests cohorts to create; persists a 14-day cached snapshot that other commands can read for daily/sprint reports.
 
 ### Plugins (10)
 

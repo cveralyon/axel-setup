@@ -35,6 +35,8 @@ DRY_RUN=false
 USER_NAME=""
 USER_CONTEXT=""
 ASSISTANT_LANGUAGE=""
+ENABLE_POSTHOG=false
+POSTHOG_PROJECT_CONTEXT=""
 
 # Counters
 HOOKS_ADDED=0
@@ -43,6 +45,8 @@ CMDS_ADDED=0
 CMDS_UPGRADED=0
 AGENTS_ADDED=0
 AGENTS_UPGRADED=0
+SKILLS_ADDED=0
+SKILLS_SKIPPED=0
 UPGRADES_DIR="$CLAUDE_DIR/axel-upgrades"
 
 # Colors
@@ -67,6 +71,8 @@ while [[ $# -gt 0 ]]; do
     --user-name) USER_NAME="$2"; shift 2 ;;
     --user-context) USER_CONTEXT="$2"; shift 2 ;;
     --language) ASSISTANT_LANGUAGE="$2"; shift 2 ;;
+    --enable-posthog) ENABLE_POSTHOG=true; shift ;;
+    --posthog-context) POSTHOG_PROJECT_CONTEXT="$2"; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
     -h|--help)
       echo "Usage: bash bootstrap.sh [options]"
@@ -80,6 +86,13 @@ while [[ $# -gt 0 ]]; do
       echo "                          e.g. 'Tech Lead at Acme, backend-focused'"
       echo "  --language LANG         Language the assistant should respond in inside"
       echo "                          hook-generated prompts (e.g. 'spanish', 'english')"
+      echo "  --enable-posthog        Install the /posthog-weekly skill and the"
+      echo "                          PostHog snapshot loader. Off by default — only"
+      echo "                          enable if your team uses the PostHog MCP."
+      echo "  --posthog-context TEXT  Required with --enable-posthog. Short product"
+      echo "                          description used in the analytical prompt,"
+      echo "                          e.g. 'Acme ATS — recruiting platform with AI"
+      echo "                          sourcing'. Helps the agent frame findings."
       echo "  --dry-run               Show what would be done without doing it"
       exit 0
       ;;
@@ -134,6 +147,16 @@ if [ -z "$ASSISTANT_LANGUAGE" ]; then
   ASSISTANT_LANGUAGE="english"
 fi
 info "Hook prompts will address you as: $USER_CONTEXT (responses in $ASSISTANT_LANGUAGE)"
+
+# --- PostHog gating: only install the skill if --enable-posthog AND a context ---
+if $ENABLE_POSTHOG && [ -z "$POSTHOG_PROJECT_CONTEXT" ]; then
+  POSTHOG_PROJECT_CONTEXT="a SaaS product (no detailed context provided — pass --posthog-context to refine)"
+  warn "--enable-posthog is set but --posthog-context is empty. Using a generic placeholder."
+fi
+if $ENABLE_POSTHOG; then
+  info "PostHog integration: ENABLED. Will install /posthog-weekly skill + snapshot loader."
+  info "  Project context: $POSTHOG_PROJECT_CONTEXT"
+fi
 
 # --- Dry run guard ---
 run() {
@@ -283,22 +306,88 @@ if [ -d "$SCRIPT_DIR/skills" ]; then
   for skill_dir in "$SCRIPT_DIR/skills/"*/; do
     [ -d "$skill_dir" ] || continue
     SKILL_NAME=$(basename "$skill_dir")
+
+    # Gate optional skills behind feature flags
+    if [ "$SKILL_NAME" = "posthog-weekly" ] && ! $ENABLE_POSTHOG; then
+      info "  skip: posthog-weekly (use --enable-posthog to install)"
+      SKILLS_SKIPPED=$((SKILLS_SKIPPED + 1))
+      continue
+    fi
+
     if [ -d "$CLAUDE_DIR/skills/$SKILL_NAME" ]; then
-      # Skill exists — check if SKILL.md differs
+      # Skill exists — check if SKILL.md differs (after placeholder substitution)
       if [ -f "$skill_dir/SKILL.md" ] && [ -f "$CLAUDE_DIR/skills/$SKILL_NAME/SKILL.md" ]; then
-        if ! diff -q "$skill_dir/SKILL.md" "$CLAUDE_DIR/skills/$SKILL_NAME/SKILL.md" >/dev/null 2>&1; then
+        PROCESSED_SKILL=$(mktemp)
+        sed \
+          -e "s|{{POSTHOG_PROJECT_CONTEXT}}|$POSTHOG_PROJECT_CONTEXT|g" \
+          -e "s|{{ASSISTANT_LANGUAGE}}|$ASSISTANT_LANGUAGE|g" \
+          -e "s|{{USER_NAME}}|$USER_NAME|g" \
+          -e "s|{{USER_CONTEXT}}|$USER_CONTEXT|g" \
+          "$skill_dir/SKILL.md" > "$PROCESSED_SKILL"
+        if ! diff -q "$PROCESSED_SKILL" "$CLAUDE_DIR/skills/$SKILL_NAME/SKILL.md" >/dev/null 2>&1; then
           if ! $DRY_RUN; then
             mkdir -p "$UPGRADES_DIR/skills/$SKILL_NAME"
-            cp -r "$skill_dir"* "$UPGRADES_DIR/skills/$SKILL_NAME/"
+            cp "$PROCESSED_SKILL" "$UPGRADES_DIR/skills/$SKILL_NAME/SKILL.md"
           fi
           upgrade "skill: $SKILL_NAME"
           SKILLS_UPGRADED=$((SKILLS_UPGRADED + 1))
         fi
+        rm -f "$PROCESSED_SKILL"
       fi
     else
       run mkdir -p "$CLAUDE_DIR/skills/$SKILL_NAME"
-      run cp -r "$skill_dir"* "$CLAUDE_DIR/skills/$SKILL_NAME/"
+      # Process SKILL.md with placeholder substitution; copy other files as-is
+      if [ -f "$skill_dir/SKILL.md" ]; then
+        if ! $DRY_RUN; then
+          sed \
+            -e "s|{{POSTHOG_PROJECT_CONTEXT}}|$POSTHOG_PROJECT_CONTEXT|g" \
+            -e "s|{{ASSISTANT_LANGUAGE}}|$ASSISTANT_LANGUAGE|g" \
+            -e "s|{{USER_NAME}}|$USER_NAME|g" \
+            -e "s|{{USER_CONTEXT}}|$USER_CONTEXT|g" \
+            "$skill_dir/SKILL.md" > "$CLAUDE_DIR/skills/$SKILL_NAME/SKILL.md"
+        fi
+      fi
+      # Copy any sibling files (helpers, README, etc.) without substitution
+      for sibling in "$skill_dir"*; do
+        [ -f "$sibling" ] || continue
+        BASE_SIBLING=$(basename "$sibling")
+        [ "$BASE_SIBLING" = "SKILL.md" ] && continue
+        run cp "$sibling" "$CLAUDE_DIR/skills/$SKILL_NAME/$BASE_SIBLING"
+      done
       SKILLS_ADDED=$((SKILLS_ADDED + 1))
+    fi
+  done
+fi
+
+# ============================================================================
+# 4b. SCRIPTS — Helper bash scripts called by skills/commands (PostHog, etc.)
+# ============================================================================
+if [ -d "$SCRIPT_DIR/scripts" ]; then
+  log "Adding helper scripts..."
+  run mkdir -p "$CLAUDE_DIR/scripts"
+  for script_file in "$SCRIPT_DIR/scripts/"*.sh; do
+    [ -f "$script_file" ] || continue
+    BASE_SCRIPT=$(basename "$script_file")
+
+    # Gate optional helpers behind feature flags (mirror skill gating)
+    if [ "$BASE_SCRIPT" = "posthog-snapshot-loader.sh" ] && ! $ENABLE_POSTHOG; then
+      info "  skip: $BASE_SCRIPT (use --enable-posthog to install)"
+      continue
+    fi
+
+    DEST_SCRIPT="$CLAUDE_DIR/scripts/$BASE_SCRIPT"
+    if [ -f "$DEST_SCRIPT" ]; then
+      if ! diff -q "$script_file" "$DEST_SCRIPT" >/dev/null 2>&1; then
+        if ! $DRY_RUN; then
+          mkdir -p "$UPGRADES_DIR/scripts"
+          cp "$script_file" "$UPGRADES_DIR/scripts/$BASE_SCRIPT"
+        fi
+        upgrade "script: $BASE_SCRIPT"
+      fi
+    else
+      run cp "$script_file" "$DEST_SCRIPT"
+      run chmod +x "$DEST_SCRIPT"
+      info "  added: scripts/$BASE_SCRIPT"
     fi
   done
 fi
