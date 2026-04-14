@@ -72,7 +72,7 @@ bash bootstrap.sh --dry-run
 
 ## What's Included
 
-### Hooks (13)
+### Hooks (16)
 
 The hook system runs automatically during Claude Code lifecycle events:
 
@@ -103,7 +103,9 @@ Slash commands you can use in Claude Code:
 
 | Command | Description |
 |---------|-------------|
-| `/daily` | Daily briefing — pulls Linear issues, calendar events, and blockers |
+| `/daily` | Daily briefing — pulls Linear issues, calendar events, and blockers (Phase 2: system sync) |
+| `/eod-review` | End-of-day review — non-technical tone, audience-aware drafts for Slack/Linear |
+| `/sprint-status` | Sprint status report — dual-audience (technical + plain-language), Linear+Notion+Slack aware |
 | `/style` | Switch response style: `debug`, `teach`, `architect`, `ship` (interactive picker) |
 | `/create-pr` | Create a PR with auto-generated summary |
 | `/deslop` | Remove AI-generated slop from code |
@@ -112,9 +114,7 @@ Slash commands you can use in Claude Code:
 | `/execute-prp` | Execute an existing PRP step by step |
 | `/multi-repo-feature` | Plan and coordinate features spanning multiple repos |
 | `/roadmap` | Generate feature and improvement suggestions |
-| `/sprint-summary` | Summarize sprint progress |
 | `/visualize` | Visualize code architecture |
-| `/weekly-review` | Weekly review of work done |
 
 Plus **26 GSD (Get Shit Done) subcommands** for structured project execution:
 `/gsd:help`, `/gsd:fast`, `/gsd:quick`, `/gsd:debug`, `/gsd:progress`, `/gsd:autonomous`, `/gsd:pause-work`, `/gsd:resume-work`, `/gsd:map-codebase`, `/gsd:session-report`, and more.
@@ -346,6 +346,10 @@ curl -sS -o /dev/null -w "HTTP: %{http_code}\n" http://localhost:9119
 Expected output: `HTTP: 200`. Logs live at `~/.claude/logs/monitor.log` and `~/.claude/logs/monitor-error.log`.
 
 If the agent runs but the port stays closed, check the error log — most failures are a wrong `NODE_PATH` (fix: re-run the `sed` above after updating `NODE_BIN`) or a permission issue on `~/.claude/session-costs.log`.
+
+## Release notes
+
+See [`CHANGELOG.md`](./CHANGELOG.md) for the full history of changes grouped by date and scope.
 
 ## License
 
