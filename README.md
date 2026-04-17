@@ -96,6 +96,10 @@ The hook system runs automatically during Claude Code lifecycle events:
 | **Stop** | `memory-extractor.sh` | Extracts key learnings and decisions to persistent memory using Claude Sonnet |
 | **Stop** | `session-cost-log.sh` | Logs session cost, tokens, and 5h rate limit consumption to `~/.claude/session-costs.log` |
 | **Stop** | `desktop-notify.sh` | macOS notification when Claude finishes (only when terminal is not focused) |
+| **SessionStart** _(opt-in)_ | `priority-map-staleness.sh` | Warns if `~/.claude/memory/priority-map.md` hasn't been touched in ≥14 days. Enable by wiring into `settings.json` SessionStart. |
+| **Cron / weekly** _(opt-in)_ | `weekly-priority-map-review.sh` | Weekly run (e.g., Monday 9am via LaunchAgent) that correlates git activity from the last 7 days against the current priority map and writes an update proposal. Requires `PRIORITY_MAP_REPOS` env var with space-separated absolute repo paths. |
+
+> **Note:** the two `priority-map-*` hooks are opt-in — they are not cabled into `settings.json` by default because they assume `~/.claude/memory/priority-map.md` exists. Create that file first, then wire the hooks (SessionStart for staleness, LaunchAgent/cron for the weekly review).
 
 ### Commands (12 custom + 26 GSD)
 

@@ -7,6 +7,14 @@ Releases are grouped by date and logical scope (no semver tagging yet).
 
 ---
 
+## [2026-04-17] — Priority Map hooks
+
+### Added
+- `hooks/priority-map-staleness.sh` — SessionStart warning when `priority-map.md` is stale (≥14 days without edits).
+- `hooks/weekly-priority-map-review.sh` — weekly cron proposal that reconciles git activity with the current priority map.
+
+---
+
 ## [2026-04-14] — Onboarding genericization
 
 Make AXEL installable for teammates (Emi, Álex) without hardcoded personal values.
