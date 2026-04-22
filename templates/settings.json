@@ -50,16 +50,6 @@
             "command": "echo \"$TOOL_INPUT\" | grep -qE 'RAILS_ENV=staging' && echo 'WARNING: staging = PRODUCTION. Confirm with the user.' >&2 && exit 1 || exit 0"
           }
         ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$HOME/.claude/hooks/gsd-prompt-guard.js\"",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "PostToolUse": [
@@ -69,7 +59,7 @@
           {
             "type": "command",
             "command": "bash $HOME/.claude/hooks/proactive-resolver.sh",
-            "timeout": 45
+            "timeout": 30
           }
         ]
       },
@@ -99,7 +89,7 @@
           {
             "type": "command",
             "command": "node \"$HOME/.claude/hooks/gsd-context-monitor.js\"",
-            "timeout": 10
+            "timeout": 3
           }
         ]
       },
@@ -129,6 +119,16 @@
           {
             "type": "command",
             "command": "bash $HOME/.claude/hooks/post-commit-verify.sh",
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/post-commit-memory-trigger.sh",
             "async": true
           }
         ]
@@ -197,14 +197,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.claude/hooks/gsd-check-update.js\""
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "bash $HOME/.claude/hooks/session-restore.sh"
           }
         ]
@@ -230,7 +222,7 @@
   "language": "spanish",
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
-  "autoCompactWindow": 1000000,
+  "autoCompactWindow": 500000,
   "promptSuggestionEnabled": true,
   "voiceEnabled": true,
   "channelsEnabled": true,

@@ -26,10 +26,12 @@ fi
 
 # Validate format: tipo (Scope): message
 if ! echo "$MSG" | grep -qE '^(feat|fix|chore|refactor|test|docs|style|perf|ci|build|revert)\s*\('; then
-  echo "WARNING: Formato de commit incorrecto." >&2
-  echo "Esperado: tipo (Modelo/Archivo): Mensaje" >&2
-  echo "Tipos válidos: feat|fix|chore|refactor|test|docs|style|perf|ci|build|revert" >&2
-  echo "Recibido: $MSG" >&2
+  echo "BLOCKED: Commit format is incorrect." >&2
+  echo "Required: type (Scope): Descriptive message" >&2
+  echo "Canonical example: feat (AuthController): add OAuth2 login flow" >&2
+  echo "Valid types: feat|fix|chore|refactor|test|docs|style|perf|ci|build|revert" >&2
+  echo "Do not use --no-verify to bypass this check. Fix the message instead." >&2
+  echo "Got: $MSG" >&2
   exit 1
 fi
 

@@ -18,8 +18,12 @@ RESOLVED=""
 if echo "$TOOL_OUTPUT" | grep -qiE "docker daemon|Cannot connect to the Docker|docker\.sock|Is the docker daemon running|docker:.*command not found"; then
   if [ "$(uname)" = "Darwin" ] && ! docker info >/dev/null 2>&1; then
     open -a "Docker" 2>/dev/null
-    for i in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
-    docker info >/dev/null 2>&1 && RESOLVED="Docker Desktop started automatically."
+    for i in $(seq 1 15); do docker info >/dev/null 2>&1 && break; sleep 1; done
+    if docker info >/dev/null 2>&1; then
+      RESOLVED="Docker Desktop started automatically."
+    else
+      RESOLVED="HINT: Docker Desktop is launching. Wait a few seconds and retry."
+    fi
   fi
 fi
 

@@ -72,25 +72,24 @@ bash bootstrap.sh --dry-run
 
 ## What's Included
 
-### Hooks (16)
+### Hooks (17)
 
 The hook system runs automatically during Claude Code lifecycle events:
 
 | Event | Hook | What it does |
 |-------|------|-------------|
 | **SessionStart** | `session-restore.sh` | Restores context from previous sessions — you pick up where you left off |
-| **SessionStart** | `gsd-check-update.js` | Checks for GSD package updates in background |
 | **UserPromptSubmit** | `session-auto-title.sh` | Auto-names the session from your first prompt — strips greetings, fillers, and assistant-name salutations. Flag-file idempotency so it only fires once per session. |
 | **PreToolUse** | `--no-verify` blocker | Blocks `git commit --no-verify` — never bypass git hooks |
 | **PreToolUse** | `validate-commit-format.sh` | Validates commit message format: `type (Scope): Message`. Parses `-m` flag and heredocs. |
 | **PreToolUse** | staging guard | Warns before running anything with `RAILS_ENV=staging` (= production) |
-| **PreToolUse** | `gsd-prompt-guard.js` | Detects prompt injection attempts in `.planning/` files |
 | **PostToolUse** | `proactive-resolver.sh` | Auto-starts Docker, PostgreSQL, Redis when they're down. Detects missing deps and suggests install commands |
 | **PostToolUse** | `post-edit-lint.sh` | Auto-runs rubocop/eslint/ruff after file edits (Ruby, TS/JS, Python) |
-| **PostToolUse** | `gsd-context-monitor.js` | Warns the agent when context window is running low (20% warning, 10% critical) |
+| **PostToolUse** | `gsd-context-monitor.js` | Warns the agent when context window is running low (15% warning, 8% critical) with debounce and severity escalation |
 | **PostToolUse** | `session-log-action.sh` | Logs tool actions for session persistence |
 | **PostToolUse** | `session-checkpoint.sh` | Every ~40 tool calls, summarizes progress using Claude Sonnet |
 | **PostToolUse** | `post-commit-verify.sh` | After git commits, suggests launching the excelsior-verifier agent |
+| **PostToolUse** | `post-commit-memory-trigger.sh` | After a `git commit`, triggers the memory extractor with a 5-minute rate limit to batch consecutive commits |
 | **PreCompact** | `precompact-save-context.sh` | Saves rich context snapshot before compaction (git state, pending work, decisions) |
 | **Stop** | `session-summarize.sh` | Compiles a structured session summary using Claude Sonnet |
 | **Stop** | `memory-extractor.sh` | Extracts key learnings and decisions to persistent memory using Claude Sonnet |

@@ -7,6 +7,21 @@ Releases are grouped by date and logical scope (no semver tagging yet).
 
 ---
 
+## [2026-04-22] — Memory system hardening + hook improvements
+
+### Added
+- `hooks/post-commit-memory-trigger.sh` — new PostToolUse hook that triggers memory extraction only after real `git commit` commands (not diff/log/status). Combined with the 5-min rate limit in `memory-extractor.sh`, this prevents extraction on every session end and groups burst commits into a single run.
+- `hooks/gsd-context-monitor.js` — context window monitor now included in the repo (was documented in README but missing from hooks/). Warns the agent when context drops below 15% (warning) or 8% (critical) with debounce and severity escalation.
+
+### Changed
+- `hooks/memory-extractor.sh` — added 5-minute rate-limit debounce: skips extraction if run within the last 5 minutes, preventing over-extraction from consecutive commits or rapid session cycling.
+- `hooks/validate-commit-format.sh` — improved error output: `BLOCKED:` instead of `WARNING:`, canonical example, explicit "do not use --no-verify" instruction.
+- `hooks/proactive-resolver.sh` — Docker wait loop reduced from 30s to 15s; adds hint message if Docker does not start within the window.
+- `templates/settings.json` — removed `gsd-prompt-guard.js` (GSD plugin hook, not part of AXEL core); removed `gsd-check-update.js` SessionStart hook; reduced `gsd-context-monitor.js` timeout 10→3; reduced `proactive-resolver.sh` timeout 45→30; added `post-commit-memory-trigger.sh`; reduced `autoCompactWindow` 1,000,000→500,000.
+- `templates/CLAUDE.md` — added two HARD RULE bullets: no AI co-author attribution in commits, and always draft before sending Slack/email/Intercom messages.
+
+---
+
 ## [2026-04-17] — Priority Map hooks
 
 ### Added

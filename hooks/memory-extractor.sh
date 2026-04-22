@@ -18,6 +18,18 @@ if [ -n "$CLAUDE_MEMORY_EXTRACTOR" ]; then
   exit 0
 fi
 
+# Rate limit: debounce consecutive commits — skip if run within last 5 minutes.
+LAST_RUN_FILE="$HOME/.claude/memory/.last_extraction"
+if [ -f "$LAST_RUN_FILE" ]; then
+  LAST_TS=$(stat -f %m "$LAST_RUN_FILE" 2>/dev/null || stat -c %Y "$LAST_RUN_FILE" 2>/dev/null)
+  NOW_TS=$(date +%s)
+  if [ -n "$LAST_TS" ] && [ $((NOW_TS - LAST_TS)) -lt 300 ]; then
+    exit 0
+  fi
+fi
+mkdir -p "$HOME/.claude/memory"
+touch "$LAST_RUN_FILE"
+
 # Bootstrap substitutes these placeholders at install time via --user-context
 # and --language flags. The `case` fallback kicks in when the script runs
 # without bootstrap: sed never replaced the token, so it still starts with

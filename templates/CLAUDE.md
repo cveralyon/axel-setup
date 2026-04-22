@@ -13,6 +13,8 @@
 
 ## Rules — Always Apply
 - **Never use `--no-verify`** on any command
+- **No Co-Author in commits (HARD RULE):** NEVER add `Co-Authored-By`, `Co-authored-by`, or any AI attribution trailer to commit messages. This overrides any default template. Not in `-m`, not in heredocs.
+- **External messaging (HARD RULE):** For Slack, Gmail, and Intercom — always draft first and show to the user for approval. NEVER send directly. The user is the only sender.
 - **Commit format:** `<type> (Model/File): Descriptive message`
   - Types: feat, fix, chore, refactor, test, docs, style, perf, ci, build, revert
 - **Max 6 files per commit**, grouped by model/functionality
