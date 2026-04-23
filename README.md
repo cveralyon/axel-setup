@@ -72,7 +72,7 @@ bash bootstrap.sh --dry-run
 
 ## What's Included
 
-### Hooks (17)
+### Hooks (18)
 
 The hook system runs automatically during Claude Code lifecycle events:
 
@@ -90,6 +90,7 @@ The hook system runs automatically during Claude Code lifecycle events:
 | **PostToolUse** | `session-checkpoint.sh` | Every ~40 tool calls, summarizes progress using Claude Sonnet |
 | **PostToolUse** | `post-commit-verify.sh` | After git commits, suggests launching the excelsior-verifier agent |
 | **PostToolUse** | `post-commit-memory-trigger.sh` | After a `git commit`, triggers the memory extractor with a 5-minute rate limit to batch consecutive commits |
+| **PostToolUse** | `linear-lifecycle-sync.sh` | Auto-moves Linear cards based on git actions: commit → In Progress, `gh pr create` → In Review, `gh pr merge` → Done. Requires Linear MCP. Configurable ticket pattern and repo filter. |
 | **PreCompact** | `precompact-save-context.sh` | Saves rich context snapshot before compaction (git state, pending work, decisions) |
 | **Stop** | `session-summarize.sh` | Compiles a structured session summary using Claude Sonnet |
 | **Stop** | `memory-extractor.sh` | Extracts key learnings and decisions to persistent memory using Claude Sonnet |

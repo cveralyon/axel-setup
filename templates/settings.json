@@ -132,6 +132,16 @@
             "async": true
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/linear-lifecycle-sync.sh",
+            "async": true
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [

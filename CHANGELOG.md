@@ -7,6 +7,13 @@ Releases are grouped by date and logical scope (no semver tagging yet).
 
 ---
 
+## [2026-04-23] — Linear lifecycle auto-sync hook
+
+### Added
+- `hooks/linear-lifecycle-sync.sh` — PostToolUse hook that automatically moves Linear cards through the lifecycle based on git/gh actions: `git commit (KEY-123)` → In Progress, `gh pr create` → In Review, `gh pr merge` → Done. Uses `claude -p haiku` + Linear MCP under the hood. Features a 90-second debounce per action type, skip logic for cards already in the target state or further along, and a `~/.claude/logs/linear-sync.log` audit trail. Configurable ticket pattern (`{{TICKET_PATTERN}}`), repo path filter (`{{REPO_PATH_FILTER}}`), and team name (`{{LINEAR_TEAM}}`) — substituted by bootstrap at install time.
+
+---
+
 ## [2026-04-23] — Linear lifecycle rule + priority-map deprecation
 
 ### Added
