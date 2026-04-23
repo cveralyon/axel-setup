@@ -11,6 +11,33 @@
 - Also: ai-service (Python/FastAPI), background-jobs, admin-panel
 - Customize this section with your actual repo names and stacks
 
+## Linear Lifecycle (HARD RULE — every code change)
+
+Any task that involves writing or modifying code MUST have a ticket in your project tracker (Linear, Jira, etc.). No exceptions for "quick fixes" or "small changes." If it's worth a commit, it's worth tracking.
+
+**No ticket exists → Create it BEFORE starting work:**
+- Title: concise, action-oriented
+- Description: what, why, and acceptance criteria if relevant
+- Assign: to the person doing the work
+- Estimate: using your team's point scale
+- Add to the active sprint/cycle if work starts now
+
+**Ticket exists, not started → Move to In Progress the moment work begins.**
+Not after. Not when you push. When you start.
+
+**Work complete, pending review → Move to In Review.**
+
+**PR merged / deployed → Move to Done.**
+
+**Decided not to do it → Move to Cancelled.**
+
+Rules:
+- Never leave a ticket in Backlog while actively coding on it
+- Never report work as complete without moving the ticket to Done
+- Check ticket state at the start of any session touching that task
+- Retroactive tickets (forgot to create earlier): create them and set the correct current state immediately
+- Investigation-only sessions (no code, no commit): no ticket required unless it becomes a tracked task
+
 ## Rules — Always Apply
 - **Never use `--no-verify`** on any command
 - **No Co-Author in commits (HARD RULE):** NEVER add `Co-Authored-By`, `Co-authored-by`, or any AI attribution trailer to commit messages. This overrides any default template. Not in `-m`, not in heredocs.

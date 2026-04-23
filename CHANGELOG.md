@@ -7,6 +7,19 @@ Releases are grouped by date and logical scope (no semver tagging yet).
 
 ---
 
+## [2026-04-23] — Linear lifecycle rule + priority-map deprecation
+
+### Added
+- `templates/CLAUDE.md` — new `## Linear Lifecycle (HARD RULE)` section: any code change requires a project tracker ticket; covers the full state machine (create before starting, In Progress on start, In Review on PR, Done on merge, Cancelled if dropped). Generic wording works with Linear, Jira, or any equivalent tool.
+
+### Changed
+- `templates/CLAUDE.md` — two new HARD RULE bullets from yesterday's session are now visible in the rendered template: no AI co-author attribution in commits, and always draft before sending external messages (Slack, Gmail, Intercom).
+
+### Notes
+- The `priority-map-staleness.sh` and `weekly-priority-map-review.sh` hooks remain in the repo as opt-in. The tradeoff: a static priority-map grows stale quickly and can introduce context mismatches against the live state in Linear/Slack. If you use them, treat the file as a rough guide only — Linear is always the source of truth.
+
+---
+
 ## [2026-04-22] — Memory system hardening + hook improvements
 
 ### Added
