@@ -68,6 +68,21 @@ Every time a card is created or meaningfully scoped, set the `estimate` field. 1
   - Test plan or how to verify
   - Breaking changes or deployment notes if applicable
 
+## PR Review Process (HARD RULE)
+1. **Always create PRs as draft** — never open a PR directly as "ready for review".
+2. **Before marking ready:** run `/pr-review-toolkit:review-pr` AND call `advisor` to confirm the work is complete and has no blockers.
+3. **Only mark "Ready for review"** when both the toolkit review and advisor confirm no blockers.
+
+## Advisor (Always On)
+The `advisor` tool consults a stronger reviewer with full conversation context. Call it:
+- Before starting any non-trivial implementation
+- Before committing to an architectural decision
+- Before marking a PR ready for review
+- When stuck or results do not converge
+- Before reporting work as complete
+
+Never skip the advisor on tasks touching production code, DB migrations, or auth flows.
+
 ## Suggest Next Task (After PR)
 After completing a task, creating a PR, or merging one, the agent MUST:
 1. Check your project tracker for the next Todo item in the active cycle assigned to you
