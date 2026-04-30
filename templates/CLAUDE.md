@@ -19,7 +19,8 @@ Any task that involves writing or modifying code MUST have a ticket in your proj
 - Title: concise, action-oriented
 - Description: what, why, and acceptance criteria if relevant
 - Assign: to the person doing the work
-- Estimate: using your team's point scale
+- Estimate: Fibonacci points (see Linear Estimates section below)
+- Labels: at least one Type label and one Repo label
 - Add to the active sprint/cycle if work starts now
 
 **Ticket exists, not started → Move to In Progress the moment work begins.**
@@ -37,6 +38,41 @@ Rules:
 - Check ticket state at the start of any session touching that task
 - Retroactive tickets (forgot to create earlier): create them and set the correct current state immediately
 - Investigation-only sessions (no code, no commit): no ticket required unless it becomes a tracked task
+
+## Linear Estimates (Always Apply)
+Every time a card is created or meaningfully scoped, set the `estimate` field. 1 point = 1 hour.
+
+| Base optimistic (h) | Fibonacci | Notes |
+|---|---|---|
+| ≤ 0.7 | **1** | Micro fix |
+| 0.7 to 1.3 | **2** | Small |
+| 1.4 to 2.0 | **3** | Medium-small |
+| 2.1 to 3.3 | **5** | Medium |
+| 3.4 to 5.3 | **8** | Large, ceiling |
+| > 5.3 | **SPLIT** | Create sub-cards, do not create the original |
+
+- Never document the calculation in the description. Only the `estimate` field matters.
+- If optimistic base exceeds 5.3h, split into sub-cards.
+- Applies to ALL card writes: new, re-scoped, retroactive.
+
+## Branch & PR Requirements (HARD RULE)
+**Branches:**
+- Every new branch must include the ticket key in its name: `KEY-123-short-description`
+- If the Linear card has no description, add one when creating the branch
+
+**Pull Requests:**
+- ALL PRs must have a description. No exceptions.
+- PR description must include:
+  - What changed and why
+  - Related ticket (link or key)
+  - Test plan or how to verify
+  - Breaking changes or deployment notes if applicable
+
+## Suggest Next Task (After PR)
+After completing a task, creating a PR, or merging one, the agent MUST:
+1. Check your project tracker for the next Todo item in the active cycle assigned to you
+2. Check team Slack channels for any urgent items since the last session
+3. Suggest the next concrete task with its ticket link and a one-line context
 
 ## Rules — Always Apply
 - **Never use `--no-verify`** on any command
@@ -75,12 +111,16 @@ When ANY command fails or ANY obstacle appears:
 ### Auto-Verification
 After completing **any non-trivial implementation** (3+ file edits), spawn `excelsior-verifier` as a background agent before reporting completion.
 
-### Coordinator Mode (3+ files)
-When a task touches **3+ files**:
-1. **Research** — Launch parallel Explore agents
-2. **Synthesize** — Write precise implementation specs
-3. **Implement** — Launch workers with clear specs
-4. **Verify** — Launch excelsior-verifier
+### Coordinator Mode (HARD RULE, triggers at 3+ files)
+When a task will touch **3 or more files**, you MUST activate the excelsior-coordinator protocol. This is NOT a guideline — it overrides any tendency to consolidate work in the main thread.
+
+Minimum mandatory execution:
+1. **Research** — Launch at least 2 parallel Explore agents in the same message. Never inline the exploration.
+2. **Synthesize** — Write precise, file-scoped implementation specs (paths, line ranges, expected diff shape).
+3. **Implement** — Launch at least 1 worker Agent per logical unit of change. Never edit 3+ files yourself in the main thread.
+4. **Verify** — Launch excelsior-verifier in background.
+
+No exceptions for features, bug fixes, refactors, or migrations.
 
 ## Frontend Work
 When building ANY frontend UI:
