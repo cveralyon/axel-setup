@@ -106,6 +106,59 @@ After completing a task, creating a PR, or merging one, the agent MUST:
 - **Prefer Grep/Glob** over Bash find/grep
 - **Avoid redundant searches** — reuse known paths
 
+## RTK — Token Compression (Optional, Opt-in)
+
+RTK (`rtk-ai/rtk`) is an optional CLI proxy that intercepts Bash tool calls via PreToolUse hook and compresses output before it reaches context. Claims 60-90% token savings on common dev commands.
+
+**If RTK is NOT installed**, this section does not apply. Detect with `rtk --version`.
+
+**If RTK IS installed** (hook present in `~/.claude/settings.json` calling `rtk hook claude`), Bash output you receive has been filtered. You must be aware of the implications.
+
+### Safe to use as-is
+- `git status/log/add/commit/push/pull` (70-92% savings)
+- `gh pr/issue/run` (82-87% savings)
+- `rspec`, `bundle exec rspec` — JSON mode, failures only (65% savings)
+- `rubocop`, `bundle install`, `rake test`, `rails test` (65-90% savings)
+- `pnpm`, `tsc`, `npm`, `ls`, `find`, linters (65-80% savings)
+
+### Risks to know — false completeness
+RTK compresses silently. Output looks complete but may be missing:
+- Deprecation warnings stripped from RSpec output (sometimes the actual root cause)
+- Truncated `git diff` context in large PRs (can hide subtle issues during review)
+- "Using gem X" lines from `bundle install` (matters for version conflict debugging)
+- Aggressive `rtk read` mode strips function bodies (NEVER use `--level aggressive`)
+
+### When to bypass RTK
+For deep debugging, PR review of large diffs, or when a diagnosis doesn't close:
+```bash
+RTK_NO_TOML=1 <command>     # bypass TOML filters, keep basic stripping
+rtk proxy <command>          # raw passthrough with token tracking
+```
+
+When `tee.mode = "always"` is configured, the full unfiltered output of every command is saved at `~/.local/share/rtk/tee/`. Read the latest file there if compressed output seems insufficient:
+```bash
+ls -t ~/.local/share/rtk/tee/ | head -5
+```
+
+### Recommended config (mitigates risks)
+`~/Library/Application Support/rtk/config.toml` (macOS) or `~/.config/rtk/config.toml`:
+```toml
+[tee]
+enabled = true
+mode = "always"
+
+[hooks]
+exclude_commands = ["git diff", "git show"]
+```
+
+This keeps `git diff` unfiltered (PR reviews stay safe) and always saves the full output for fallback recovery.
+
+### What RTK does NOT cover
+`Read`, `Grep`, `Glob` built-in tools bypass the hook entirely. Only Bash tool calls are compressed. So reading files via the Read tool is unaffected.
+
+### Hard rule
+Never use `rtk read --level aggressive` — strips function bodies, leaves only signatures, breaks any logic-reading task without warning.
+
 ## Environment Mapping (CRITICAL)
 | Name      | Real environment | Notes                          |
 |-----------|-----------------|--------------------------------|
