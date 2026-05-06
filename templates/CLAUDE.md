@@ -59,6 +59,10 @@ Every time a card is created or meaningfully scoped, set the `estimate` field. 1
 **Branches:**
 - Every new branch must include the ticket key in its name: `KEY-123-short-description`
 - If the Linear card has no description, add one when creating the branch
+- **Branch base and PR target (HARD RULE):**
+  - **Features and fixes of unreleased features** → branch from `staging`, PR targets `staging`.
+  - **Security patches and production hotfixes** → branch from `main`, PR targets `main`.
+  - Never mix: a security fix must never target `staging`, and a feature branch must never target `main` directly.
 
 **Pull Requests:**
 - ALL PRs must have a description. No exceptions.
