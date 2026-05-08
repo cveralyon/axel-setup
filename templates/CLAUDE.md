@@ -23,14 +23,30 @@ Any task that involves writing or modifying code MUST have a ticket in your proj
 - Labels: at least one Type label and one Repo label
 - Add to the active sprint/cycle if work starts now
 
-**Ticket exists, not started → Move to In Progress the moment work begins.**
+**Lifecycle (in order):**
+
+- **Triage** → newly created, pending evaluation
+- **Backlog** → evaluated, not yet in active cycle
+- **Todo** → scheduled in active cycle, not started
+- **In Progress** → actively being worked on — move here the moment work begins, not after
+- **PR In Review** → PR open and awaiting review
+- **Staging** → PR merged and deployed to staging, pending validation before production
+- **Done** → deployed to production and closed
+- **Canceled** → discarded
+- **Duplicate** → duplicate of another card — close and link the original
+
+**Card exists, not started → Move to In Progress the moment work begins.**
 Not after. Not when you push. When you start.
 
-**Work complete, pending review → Move to In Review.**
+**PR open → Move to PR In Review.**
 
-**PR merged / deployed → Move to Done.**
+**PR merged to staging → Move to Staging.**
 
-**Decided not to do it → Move to Cancelled.**
+**Deployed to production → Move to Done.**
+
+**Decided not to do it → Move to Canceled.**
+
+**Duplicate of another card → Move to Duplicate, add link to original.**
 
 Rules:
 - Never leave a ticket in Backlog while actively coding on it
