@@ -38,11 +38,11 @@ Any task that involves writing or modifying code MUST have a ticket in your proj
 **Card exists, not started → Move to In Progress the moment work begins.**
 Not after. Not when you push. When you start.
 
-**PR open → Move to PR In Review.**
+**PR opened (to any branch) → Move to PR In Review.**
 
-**PR merged to staging → Move to Staging.**
+**PR merged to `staging` → Move to Staging.**
 
-**Deployed to production → Move to Done.**
+**PR merged to `main` → Move to Done.**
 
 **Decided not to do it → Move to Canceled.**
 
