@@ -216,7 +216,7 @@ When intent is clear, engage the canonical skill and announce it in one line —
 
 | Intent / signal | Canonical skill | Notes |
 |-----------------|-----------------|-------|
-| Clarify before coding (vague feature, no acceptance criteria) | `brainstorming` | GSD `gsd-discuss`/`gsd-spec` only inside an active `.planning/` project |
+| Clarify before coding (vague feature, no acceptance criteria) | `brainstorming` | GSD `gsd-discuss-phase`/`gsd-spec-phase` only inside an active `.planning/` project |
 | Bug / test failure / unexpected behavior | `systematic-debugging` | `gsd-debug` only for cross-session hunts needing persistent state |
 | New feature/fix with tests | `test-driven-development` | retrofit tests onto a finished GSD phase → `gsd-add-tests` |
 | Orient in a cold / large repo | `gsd-map-codebase` (+ `gsd-graphify`) | structured architecture map / knowledge graph |
