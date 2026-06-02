@@ -2,7 +2,9 @@
 
 **AXEL** = **A**utonomous e**X**celsior **E**ngineering **L**ayer
 
-A complete, production-grade configuration package for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that transforms it into a proactive engineering partner. Includes session persistence, automatic memory, proactive error resolution, 41 specialized agents, 38 slash commands, and a real-time usage monitor.
+A complete, production-grade configuration package for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that transforms it into a proactive engineering partner. Includes session persistence, automatic memory, proactive error resolution, a curated suite of specialized agents and slash commands, and a real-time usage monitor.
+
+> **GSD is not vendored.** [get-shit-done](https://www.npmjs.com/package/get-shit-done-cc) installs and updates independently (`npx get-shit-done-cc`). AXEL consumes the live GSD skills/agents rather than bundling a frozen copy — see the [CHANGELOG](CHANGELOG.md) entry for 2026-06-02.
 
 ## Philosophy: Excelsior
 

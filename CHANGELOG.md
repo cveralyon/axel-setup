@@ -7,6 +7,25 @@ Releases are grouped by date and logical scope (no semver tagging yet).
 
 ---
 
+## [2026-06-02] — Decouple GSD from AXEL
+
+GSD (get-shit-done) was vendored as a frozen snapshot inside AXEL (18 `gsd-*` agents + `commands/gsd/` in the retired `/gsd:` format). GSD now updates independently through its own installer, so the bundled copy only caused version + command-format skew — and on re-bootstrap would resurrect `commands/gsd/` files that GSD deleted upstream in favor of `/gsd-` skills. Complements the settings-template GSD hook removals from 2026-04-22.
+
+### Removed
+- `agents/gsd-*.md` (18 vendored GSD agents) — now owned by the GSD installer.
+- `commands/gsd/` (GSD subcommands in `/gsd:` colon format) — superseded by `/gsd-` skills upstream.
+
+### Changed
+- `bootstrap.sh` no longer creates `commands/gsd/`, iterates GSD subcommands, or reports GSD counts. It detects the live GSD skills and, if absent, points the user to `npx get-shit-done-cc@latest --claude --global`.
+- Help hints updated `/gsd:help` → `/gsd-help`.
+- `README.md` drops hardcoded agent/command counts (they drifted) and documents the GSD decoupling.
+
+### Added
+- `agents/{onboard,feature,debug,security-check}.md` — advisory escalations to current GSD capabilities (`gsd-map-codebase`/`graphify`, `gsd-spike`/`sketch`, `gsd-debug`, `gsd-secure-phase`); subagents recommend, the main loop runs the skill.
+- `templates/CLAUDE.md` — "Agentic Skill Activation" decision tree: canonical skill per intent with an anti-overhead guardrail.
+
+---
+
 ## [2026-04-23] — Linear lifecycle auto-sync hook
 
 ### Added
