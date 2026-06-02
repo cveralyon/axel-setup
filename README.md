@@ -2,7 +2,9 @@
 
 **AXEL** = **A**utonomous e**X**celsior **E**ngineering **L**ayer
 
-A complete, production-grade configuration package for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that transforms it into a proactive engineering partner. Includes session persistence, automatic memory, proactive error resolution, 41 specialized agents, 38 slash commands, and a real-time usage monitor.
+A complete, production-grade configuration package for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that transforms it into a proactive engineering partner. Includes session persistence, automatic memory, proactive error resolution, a curated suite of specialized agents and slash commands, and a real-time usage monitor.
+
+> **GSD is not vendored.** [get-shit-done](https://www.npmjs.com/package/get-shit-done-cc) installs and updates independently (`npx get-shit-done-cc`). AXEL consumes the live GSD skills/agents rather than bundling a frozen copy — see the [CHANGELOG](CHANGELOG.md) entry for 2026-06-02.
 
 ## Philosophy: Excelsior
 
@@ -101,7 +103,7 @@ The hook system runs automatically during Claude Code lifecycle events:
 
 > **Note:** the two `priority-map-*` hooks are opt-in — they are not cabled into `settings.json` by default because they assume `~/.claude/memory/priority-map.md` exists. Create that file first, then wire the hooks (SessionStart for staleness, LaunchAgent/cron for the weekly review).
 
-### Commands (12 custom + 26 GSD)
+### Commands (12 custom)
 
 Slash commands you can use in Claude Code:
 
@@ -120,10 +122,9 @@ Slash commands you can use in Claude Code:
 | `/roadmap` | Generate feature and improvement suggestions |
 | `/visualize` | Visualize code architecture |
 
-Plus **26 GSD (Get Shit Done) subcommands** for structured project execution:
-`/gsd:help`, `/gsd:fast`, `/gsd:quick`, `/gsd:debug`, `/gsd:progress`, `/gsd:autonomous`, `/gsd:pause-work`, `/gsd:resume-work`, `/gsd:map-codebase`, `/gsd:session-report`, and more.
+GSD's own commands (now `/gsd-*` skills) are provided by the [get-shit-done](https://www.npmjs.com/package/get-shit-done-cc) installer, not AXEL — see the note at the top of this README.
 
-### Agents (41)
+### Agents (23)
 
 Specialized subagents that Claude Code can spawn for focused tasks:
 
@@ -137,7 +138,7 @@ Specialized subagents that Claude Code can spawn for focused tasks:
 | **Multi-repo** | `cross-repo`, `linear-task` |
 | **Communication** | `draft-message`, `sprint-summary` |
 | **Onboarding** | `onboard` |
-| **GSD System** | 20+ agents for structured project execution (planner, executor, verifier, researcher, etc.) |
+| **GSD System** | Installed separately by the [get-shit-done](https://www.npmjs.com/package/get-shit-done-cc) package (planner, executor, verifier, researcher, etc.) — not vendored by AXEL |
 
 ### Usage Monitor
 

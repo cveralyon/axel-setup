@@ -210,6 +210,24 @@ Minimum mandatory execution:
 
 No exceptions for features, bug fixes, refactors, or migrations.
 
+## Agentic Skill Activation — Decision Tree (auto-invoke, don't wait to be asked)
+
+When intent is clear, engage the canonical skill and announce it in one line — don't wait for the user to type the command. **One canonical skill per intent** so activation stays consistent. On overlap, the canonical column wins.
+
+| Intent / signal | Canonical skill | Notes |
+|-----------------|-----------------|-------|
+| Clarify before coding (vague feature, no acceptance criteria) | `brainstorming` | GSD `gsd-discuss`/`gsd-spec` only inside an active `.planning/` project |
+| Bug / test failure / unexpected behavior | `systematic-debugging` | `gsd-debug` only for cross-session hunts needing persistent state |
+| New feature/fix with tests | `test-driven-development` | retrofit tests onto a finished GSD phase → `gsd-add-tests` |
+| Orient in a cold / large repo | `gsd-map-codebase` (+ `gsd-graphify`) | structured architecture map / knowledge graph |
+| Feasibility / unknown integration | `gsd-spike` | throwaway exploration before committing a scaffold |
+| Unsettled UI direction (greenfield) | `frontend-design` (+ `gsd-sketch`) | throwaway HTML mockups → then implementation |
+| Auth / permissions / sensitive change | `gsd-secure-phase` (in a GSD project) | threat-model-anchored verification |
+
+Heavy GSD (`gsd-plan-phase`, roadmaps, milestones, full `.planning/`) is for large multi-phase builds only — not day-to-day scoped changes. AXEL's workflow agents (`onboard`/`feature`/`debug`/`security-check`) surface these GSD escalations in their output; the main loop runs the skill (subagents can't invoke skills directly).
+
+> Requires GSD ([get-shit-done](https://www.npmjs.com/package/get-shit-done-cc)) installed — AXEL's bootstrap installs it.
+
 ## Frontend Work
 When building ANY frontend UI:
 1. The `frontend-design` plugin activates automatically

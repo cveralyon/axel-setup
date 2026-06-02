@@ -18,6 +18,9 @@
 #   6. Sets up memory directory structure (preserves all existing memory)
 #   7. Offers a team CLAUDE.md only if you don't have one
 #
+# Note: GSD (get-shit-done) is NOT vendored by AXEL. Install/update it via its
+#       own installer (npx get-shit-done-cc); AXEL consumes the live GSD skills.
+#
 # Prerequisites:
 #   - Claude Code CLI installed (claude --version)
 #   - Node.js >= 18 (for hook scripts)
@@ -212,7 +215,7 @@ fi
 
 # --- Create directory structure (mkdir -p is already additive) ---
 log "Ensuring directory structure..."
-for dir in hooks commands commands/gsd agents skills memory memory/decisions sessions sessions/checkpoints logs; do
+for dir in hooks commands agents skills memory memory/decisions sessions sessions/checkpoints logs; do
   mkdir -p "$CLAUDE_DIR/$dir"
 done
 
@@ -269,18 +272,17 @@ for cmd_file in "$SCRIPT_DIR/commands/"*.md; do
   add_or_upgrade "$cmd_file" "$CLAUDE_DIR/commands/$BASENAME" "$BASENAME" "CMDS_ADDED" "CMDS_UPGRADED" "commands"
 done
 
-# GSD subcommands
-GSD_ADDED=0
-GSD_UPGRADED=0
-if [ -d "$SCRIPT_DIR/commands/gsd" ]; then
-  for cmd_file in "$SCRIPT_DIR/commands/gsd/"*.md; do
-    [ -f "$cmd_file" ] || continue
-    BASENAME=$(basename "$cmd_file")
-    add_or_upgrade "$cmd_file" "$CLAUDE_DIR/commands/gsd/$BASENAME" "gsd/$BASENAME" "GSD_ADDED" "GSD_UPGRADED" "commands/gsd"
-  done
+# GSD (get-shit-done) is intentionally NOT vendored by AXEL. It ships and
+# updates through its own installer, so bundling a frozen copy only caused
+# version + command-format skew (the colon-form /gsd: commands were removed
+# upstream in favor of /gsd- skills). AXEL consumes the live GSD skills/agents.
+if [ -d "$CLAUDE_DIR/skills" ] && ls "$CLAUDE_DIR"/skills/gsd-* >/dev/null 2>&1; then
+  skip "GSD (managed by its own installer)"
+else
+  info "GSD not detected — install it separately: npx get-shit-done-cc@latest --claude --global"
 fi
 
-log "Commands: $CMDS_ADDED new, $CMDS_UPGRADED upgrades | GSD: $GSD_ADDED new, $GSD_UPGRADED upgrades"
+log "Commands: $CMDS_ADDED new, $CMDS_UPGRADED upgrades"
 
 # ============================================================================
 # 3. AGENTS — Only add new ones
@@ -595,7 +597,7 @@ fi
 # ============================================================================
 # 12. UPGRADE REVIEW PROMPT — Generate if there are upgrades to review
 # ============================================================================
-TOTAL_UPGRADES=$((HOOKS_UPGRADED + CMDS_UPGRADED + GSD_UPGRADED + AGENTS_UPGRADED + SKILLS_UPGRADED))
+TOTAL_UPGRADES=$((HOOKS_UPGRADED + CMDS_UPGRADED + AGENTS_UPGRADED + SKILLS_UPGRADED))
 
 if [ "$TOTAL_UPGRADES" -gt 0 ] && ! $DRY_RUN; then
   log "Generating upgrade review prompt..."
@@ -616,7 +618,7 @@ Your Claude Code agent will help you compare and merge the best parts of each.
 
 MANIFEST_EOF
 
-  for category in hooks commands commands/gsd agents skills; do
+  for category in hooks commands agents skills; do
     if [ -d "$UPGRADES_DIR/$category" ]; then
       echo "### $category" >> "$UPGRADES_DIR/MANIFEST.md"
       for f in "$UPGRADES_DIR/$category/"*; do
@@ -643,7 +645,7 @@ echo ""
 
 printf "${BOLD}What was added (new files):${RESET}\n"
 info "  Hooks:    $HOOKS_ADDED new"
-info "  Commands: $CMDS_ADDED new | GSD: $GSD_ADDED new"
+info "  Commands: $CMDS_ADDED new"
 info "  Agents:   $AGENTS_ADDED new"
 info "  Skills:   $SKILLS_ADDED new"
 info "  Plugins:  $PLUGINS_ADDED new  ($PLUGINS_SKIPPED already installed)"
@@ -652,7 +654,7 @@ echo ""
 
 if [ "$TOTAL_UPGRADES" -gt 0 ]; then
   printf "${YELLOW}${BOLD}Upgrades available: $TOTAL_UPGRADES files have improved versions${RESET}\n"
-  info "  Hooks:    $HOOKS_UPGRADED | Commands: $CMDS_UPGRADED | GSD: $GSD_UPGRADED"
+  info "  Hooks:    $HOOKS_UPGRADED | Commands: $CMDS_UPGRADED"
   info "  Agents:   $AGENTS_UPGRADED | Skills: $SKILLS_UPGRADED"
   echo ""
   printf "${BOLD}To review and apply upgrades, run this in Claude Code:${RESET}\n"
@@ -675,9 +677,9 @@ info "Next steps:"
 info "  1. Restart Claude Code to load new plugins"
 if [ "$TOTAL_UPGRADES" -gt 0 ]; then
   info "  2. Review upgrades: paste the command above into Claude Code"
-  info "  3. Try: /daily, /style, /gsd:help"
+  info "  3. Try: /daily, /style, /gsd-help"
 else
-  info "  2. Try: /daily, /style, /gsd:help"
+  info "  2. Try: /daily, /style, /gsd-help"
 fi
 info "  AXEL will continue learning your personal preferences"
 echo ""

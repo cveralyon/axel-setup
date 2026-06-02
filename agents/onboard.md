@@ -13,3 +13,12 @@ Give a quick situational overview of the current repository.
 6. **Branch state:** ahead/behind remote
 
 Present as a compact dashboard, not verbose paragraphs.
+
+## Deeper orientation (escalate when needed)
+
+The steps above are a git/CI snapshot. When the repo is large or unfamiliar and no
+brain packet covers it, recommend escalating to GSD's codebase intelligence:
+- **`gsd-map-codebase`** — parallel mappers produce a structured architecture map under `.planning/codebase/`.
+- **`gsd-graphify`** — builds a queryable knowledge graph of the project.
+
+Surface this as a recommendation in your output; the main agent runs the skill (subagents can't invoke skills directly).

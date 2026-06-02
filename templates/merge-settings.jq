@@ -41,13 +41,12 @@
 
 (.[0].statusLine // .[1].statusLine) as $merged_statusline |
 
-.[1] + .[0] +
-{
+.[1] + .[0] + {
   env: $merged_env,
-  permissions: (.[0].permissions // {}) + {
+  permissions: ((.[0].permissions // {}) + {
     allow: $merged_allow,
     deny: $merged_deny
-  },
+  }),
   hooks: $merged_hooks,
   enabledPlugins: $merged_plugins,
   statusLine: $merged_statusline
