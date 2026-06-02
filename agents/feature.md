@@ -39,3 +39,10 @@ Create in order:
 - All code in English, explanations in Spanish
 - Ask before creating migrations
 - Run validation after: `rubocop` / `pnpm check`
+
+## Before scaffolding — de-risk first (escalate when needed)
+
+- If feasibility or an unfamiliar integration is uncertain, recommend a throwaway **`gsd-spike`** before committing to the scaffold.
+- If the UI direction is unsettled, recommend exploring with **`gsd-sketch`** (throwaway HTML mockups) before writing components.
+
+Surface these as a recommendation; the main agent runs the skill (subagents can't invoke skills directly). Once direction is clear, scaffold as above.

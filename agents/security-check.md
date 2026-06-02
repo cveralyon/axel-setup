@@ -23,3 +23,7 @@ Run security analysis on the current repository.
    - **CRITICAL:** must fix now (exposed secrets, known CVEs)
    - **HIGH:** fix soon (security warnings)
    - **MEDIUM:** track (informational findings)
+
+## Threat-model verification (escalate when needed)
+
+The scans above are tooling-level (SAST + dependency audit). For auth, permissions, or other sensitive changes — especially within a GSD project/phase — recommend escalating to **`gsd-secure-phase`**, which verifies threat mitigations against a threat model. Surface this as a recommendation; the main agent runs the skill.

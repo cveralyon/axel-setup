@@ -41,3 +41,7 @@ Component → Hook (useQuery/useMutation) → Service (servicesClient/Server) �
 - Apply fix, verify spec passes
 - Run full validation: `RAILS_ENV=test bundle exec rspec` / `pnpm check`
 - Check for regressions in related features
+
+## Cross-session bugs (escalate when needed)
+
+The flow above is for an in-session hunt. If the bug spans multiple sessions or context resets (intermittent, long investigation, needs persistent hypotheses), recommend escalating to **`gsd-debug`**, which keeps debug state across resets. Surface this as a recommendation; the main agent runs the skill.
