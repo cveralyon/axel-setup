@@ -217,6 +217,7 @@ Minimum mandatory execution:
 2. **Synthesize** — Write precise, file-scoped implementation specs (paths, line ranges, expected diff shape).
 3. **Implement** — Launch at least 1 worker Agent per logical unit of change. Never edit 3+ files yourself in the main thread.
 4. **Verify** — Launch excelsior-verifier in background.
+5. **Model routing**: set the `model` param explicitly on every Agent call per the `model-routing` skill (Explore/research: sonnet, mechanical reduction: haiku, risky implementation and adversarial verification: opus). Judgment stays in the main thread, never delegated. Enforced by the `enforce-agent-model.jq` PreToolUse hook.
 
 No exceptions for features, bug fixes, refactors, or migrations.
 

@@ -7,6 +7,18 @@ Releases are grouped by date and logical scope (no semver tagging yet).
 
 ---
 
+## [2026-06-11] Subagent model routing
+
+With a Fable-class model on the main thread, any Agent call without an explicit `model` param silently inherits the session model, so token-heavy subagent work (exploration, log triage, bounded edits) runs at the most expensive tier in the catalog. This change adds a routing layer: judgment stays on the session model, everything delegated gets an explicit cheaper tier. Pattern distilled from `efficient-fable` (github.com/BuilderIO/skills), completed with the task-to-tier table and cost anchors that the original omits.
+
+### Added
+- `skills/model-routing/SKILL.md`: routing table (sonnet for exploration/research/bounded implementation, haiku for mechanical reduction, opus for risky implementation and adversarial verification), handoff packet template, vetting protocol, and anti-waste rules.
+- `hooks/enforce-agent-model.jq`: PreToolUse filter that denies any Agent call missing the `model` param; the deny reason embeds the routing table so the retry succeeds first try.
+
+### Changed
+- `templates/settings.json`: new PreToolUse hook entry (matcher `Agent`) wiring the jq filter.
+- `templates/CLAUDE.md`: Coordinator Mode gains step 5 (explicit model routing on every Agent call).
+
 ## [2026-06-02] — Decouple GSD from AXEL
 
 GSD (get-shit-done) was vendored as a frozen snapshot inside AXEL (18 `gsd-*` agents + `commands/gsd/` in the retired `/gsd:` format). GSD now updates independently through its own installer, so the bundled copy only caused version + command-format skew — and on re-bootstrap would resurrect `commands/gsd/` files that GSD deleted upstream in favor of `/gsd-` skills. Complements the settings-template GSD hook removals from 2026-04-22.

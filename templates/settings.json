@@ -50,6 +50,17 @@
             "command": "echo \"$TOOL_INPUT\" | grep -qE 'RAILS_ENV=staging' && echo 'WARNING: staging = PRODUCTION. Confirm with the user.' >&2 && exit 1 || exit 0"
           }
         ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c -f $HOME/.claude/hooks/enforce-agent-model.jq",
+            "timeout": 5,
+            "statusMessage": "Checking Agent model routing..."
+          }
+        ]
       }
     ],
     "PostToolUse": [
