@@ -7,6 +7,22 @@ Releases are grouped by date and logical scope (no semver tagging yet).
 
 ---
 
+## [2026-06-12] OSS readiness and package entrypoint
+
+Prepare AXEL Setup for a stronger public open source application and a cleaner contributor workflow.
+
+### Added
+- `CONTRIBUTING.md` with project scope, local setup, validation, PR expectations, and security reporting guidance.
+- GitHub issue forms for bugs, features, and roadmap items, plus a pull request template.
+- GitHub Actions CI that runs repository checks on pushes to `main` and on pull requests.
+- `package.json` and `bin/axel-setup.js` so the bootstrap can be run through npm from GitHub and published as `axel-setup`.
+- `scripts/ci/check.sh` and `scripts/ci/bootstrap-dry-run.sh` for shell syntax checks, jq validation, JSON validation, bootstrap smoke testing, and npm package dry run checks.
+
+### Changed
+- `README.md` now includes an explicit Ecosystem Relevance section and documents the npm based install path.
+
+---
+
 ## [2026-06-11] Subagent model routing
 
 With a Fable-class model on the main thread, any Agent call without an explicit `model` param silently inherits the session model, so token-heavy subagent work (exploration, log triage, bounded edits) runs at the most expensive tier in the catalog. This change adds a routing layer: judgment stays on the session model, everything delegated gets an explicit cheaper tier. Pattern distilled from `efficient-fable` (github.com/BuilderIO/skills), completed with the task-to-tier table and cost anchors that the original omits.
@@ -117,7 +133,7 @@ Make AXEL installable for teammates (Emi, Álex) without hardcoded personal valu
 - Session-learned policies encoded into the command: CS messaging tone, backfill granularity (1 PR = 1 card), Notion read-only policy (`e082ab8`, `2d6524a`, `e38fd21`)
 
 ### Fixed
-- `#clients` identified as an INTERNAL channel — drafts are notes for Javi, not customer-facing (`39efac2`)
+- Support channel classified as internal, so drafts are notes for the team and not customer facing (`39efac2`)
 - Draft targeting: reply in the original Slack thread, not the user's DM (`fd64145`)
 
 ### Changed

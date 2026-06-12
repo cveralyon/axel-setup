@@ -16,7 +16,35 @@ AXEL operates on the **Excelsior principle** — always beyond, always better, n
 - **Context awareness**: Monitors context window usage and warns before it runs out
 - **Usage monitoring**: Tracks token usage, cost, and rate limit consumption per session — live terminal dashboard and web dashboard at `http://localhost:9119`
 
+## Ecosystem Relevance
+
+AI coding tools are moving from individual prompts into repeatable team workflows. AXEL exists to make those workflows easier to share, audit, and improve as open source infrastructure.
+
+The project packages operational patterns that many engineering teams need when adopting Claude Code:
+
+- Reproducible setup for hooks, commands, agents, skills, plugins, and team templates.
+- Guardrails for risky agent behavior, including commit validation, context monitoring, and explicit subagent model routing.
+- Session persistence and memory extraction so long running engineering work can survive context resets.
+- Verification and review workflows for code changes, incidents, deploy checks, and multi repo coordination.
+- Additive installation that preserves each developer's existing Claude configuration.
+
+The goal is not to hide local preferences inside one private setup. The goal is to convert practical agentic engineering workflows into reusable tooling that other developers can install, inspect, adapt, and contribute back to.
+
 ## Quick Start
+
+Run directly from GitHub through npm:
+
+```bash
+npx github:cveralyon/axel-setup --dry-run --user-name "Your Name"
+```
+
+After the npm package is published:
+
+```bash
+npx axel-setup --dry-run --user-name "Your Name"
+```
+
+Or clone the repository:
 
 ```bash
 git clone https://github.com/cveralyon/axel-setup.git
@@ -52,7 +80,7 @@ What `--enable-posthog` installs:
 - **`/posthog-weekly` skill** — pulls dashboards, insights, events, errors, and cohorts from PostHog; identifies dead events, regressions, error backlog, instrumentation gaps, and suggested cohorts; persists a 14-day cached snapshot for other commands to read.
 - **`scripts/posthog-snapshot-loader.sh`** — bash helper that reads the cached snapshot and prints a markdown summary. Sourceable from any other command (e.g. `/sprint-status`, `/eod-review`, `/daily`) so they include the latest PostHog findings without re-querying.
 
-What `--posthog-context` does: it gets substituted into the skill's prompt so the analytical lens knows what kind of product it's looking at. A good context is one sentence: name + product type + key features. Example: `"Acme ATS — recruiting platform with AI sourcing (People Finder, AI Hunt)"`. Defaults to a generic placeholder if omitted.
+What `--posthog-context` does: it gets substituted into the skill's prompt so the analytical lens knows what kind of product it's looking at. A good context is one sentence: name + product type + key features. Example: `"Acme Support Desk — B2B ticketing product with search, analytics, and workflow automation"`. Defaults to a generic placeholder if omitted.
 
 The skill is **gated**: without `--enable-posthog`, neither the skill nor the helper script are installed. So teams that don't use PostHog don't get extra files in their `~/.claude/`.
 
@@ -158,7 +186,7 @@ Features:
 
 **Status bar** shows live data on every Claude Code interaction:
 ```
-Mainder-API | (main) | Sonnet 4.6 | ctx:69% | $1.26 | 5h:22% (+3.2%)
+acme-api | (main) | Sonnet 4.6 | ctx:69% | $1.26 | 5h:22% (+3.2%)
 ```
 
 **Terminal live view** — runs in a terminal pane, updates every 10s:
@@ -296,6 +324,10 @@ The template at `~/CLAUDE.md` (created only if you don't have one) includes:
 - Multi-repo workflow guidelines
 
 Customize it with your team's specific repos, conventions, and rules.
+
+## Contributing
+
+Contributions are welcome when they improve AXEL as reusable developer tooling. Start with [`CONTRIBUTING.md`](./CONTRIBUTING.md), open a focused issue when the scope is unclear, and keep private company context out of public examples.
 
 ## What's NOT Touched
 
