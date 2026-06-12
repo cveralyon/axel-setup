@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security coordination
+    url: https://github.com/cveralyon/axel-setup/issues
+    about: Open a minimal issue asking for private coordination. Do not include exploit details.

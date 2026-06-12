@@ -69,7 +69,7 @@ GIT_EVIDENCE=$(
 )
 
 PROMPT=$(cat <<PROMPT_EOF
-It's Monday morning. Your task: review the user's priority-map.md and propose an update based on recent git activity.
+It is Monday morning. Your task: review the user priority-map.md and propose an update based on recent git activity.
 
 **Input 1 — current priority-map:**
 \`\`\`
@@ -99,13 +99,13 @@ $(cat "$ARCHIVE" 2>/dev/null || echo "empty")
    - Same structure as current
    - Closed items removed
    - New items added in the matching bucket
-   - 'Updated:' field set to $TIMESTAMP
-   - 'Sprint:' field only if you can infer it from context, otherwise leave it
+   - Updated field set to $TIMESTAMP
+   - Sprint field only if you can infer it from context, otherwise leave it
    - Do NOT overwrite \`$PRIORITY_MAP\` directly — only the .proposed file
 
 **Rules:**
 - Conservative: if an item does not clearly match a merged PR, do NOT move it to the archive.
-- If there isn't enough evidence to propose changes → write "No changes suggested — priority-map looks up to date" in the review summary.
+- If there is not enough evidence to propose changes → write "No changes suggested — priority-map looks up to date" in the review summary.
 - Do not invent new P0s without git evidence.
 PROMPT_EOF
 )
