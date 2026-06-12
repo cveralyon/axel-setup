@@ -1,0 +1,45 @@
+{
+  "name": "axel-setup",
+  "version": "0.1.0",
+  "description": "Claude Code team configuration package with hooks, agents, commands, skills, plugins, and repeatable bootstrap tooling.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cveralyon/axel-setup.git"
+  },
+  "homepage": "https://github.com/cveralyon/axel-setup#readme",
+  "bugs": {
+    "url": "https://github.com/cveralyon/axel-setup/issues"
+  },
+  "bin": {
+    "axel-setup": "bin/axel-setup.js"
+  },
+  "files": [
+    "agents",
+    "commands",
+    "hooks",
+    "scripts",
+    "skills",
+    "templates",
+    "tools",
+    "bin",
+    "bootstrap.sh",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "README.md",
+    "!skills/**/__pycache__",
+    "!skills/**/*.pyc"
+  ],
+  "scripts": {
+    "check": "bash scripts/ci/check.sh",
+    "smoke": "bash scripts/ci/bootstrap-dry-run.sh",
+    "pack:dry-run": "npm pack --dry-run"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
