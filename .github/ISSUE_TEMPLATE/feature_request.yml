@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest a focused improvement for AXEL Setup.
+title: "feat: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for concrete improvements to bootstrap, hooks, agents, commands, skills, templates, packaging, or documentation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or maintainer problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the change you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider?
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: How should maintainers test or review this change?

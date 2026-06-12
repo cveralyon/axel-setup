@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible problem in AXEL Setup.
+title: "bug: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include enough detail for another maintainer to reproduce the behavior safely.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, shell, Node version, jq version, and Claude Code version if relevant.
+      placeholder: "macOS 15, zsh, Node 22, jq 1.7, Claude Code 1.x"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact commands or actions that trigger the problem.
+      placeholder: |
+        1. Run ...
+        2. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      description: Paste logs or command output. Remove secrets, tokens, private paths, and customer data first.
+      render: shell

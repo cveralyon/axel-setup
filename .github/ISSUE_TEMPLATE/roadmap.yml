@@ -1,0 +1,36 @@
+name: Roadmap item
+description: Track a larger OSS readiness or ecosystem improvement.
+title: "roadmap: "
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What should be true when this roadmap item is complete?
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Ecosystem impact
+      description: How does this help developers, teams, or maintainers outside the original project?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What work is included and excluded?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List concrete checks that prove the item is done.
+      placeholder: |
+        - Documentation updated.
+        - CI covers the workflow.
+        - Release notes explain the change.
+    validations:
+      required: true
