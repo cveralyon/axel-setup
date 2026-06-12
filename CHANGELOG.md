@@ -3,7 +3,21 @@
 All notable changes to AXEL Setup are documented in this file.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-Releases are grouped by date and logical scope (no semver tagging yet).
+Releases are grouped by date and logical scope. npm package releases use semver tags.
+
+---
+
+## [0.1.1] 2026-06-12 npm publish hardening
+
+Prepare the npm package for the first public registry publish without changing bootstrap behavior.
+
+### Added
+- npm package metadata for author and discovery keywords.
+- `npm run publish:dry-run` maintainer script.
+- README maintainer publish checklist with root directory and explicit path examples.
+
+### Changed
+- `prepublishOnly` now runs the full repository check before registry publish.
 
 ---
 

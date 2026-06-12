@@ -52,6 +52,24 @@ cd axel-setup
 bash bootstrap.sh --user-name "Your Name"
 ```
 
+### Maintainer Publish Checklist
+
+Run publish commands from the repository root, where `package.json` lives:
+
+```bash
+cd /Users/cveralyon/axel-onboarding
+npm whoami
+npm run check
+npm run publish:dry-run
+npm publish --access public
+```
+
+From another directory, pass the package path explicitly:
+
+```bash
+npm publish /Users/cveralyon/axel-onboarding --access public
+```
+
 Advanced: pass extra context so the Stop hooks personalize their prompts:
 
 ```bash

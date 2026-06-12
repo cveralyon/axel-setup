@@ -1,8 +1,22 @@
 {
   "name": "axel-setup",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Claude Code team configuration package with hooks, agents, commands, skills, plugins, and repeatable bootstrap tooling.",
   "license": "MIT",
+  "author": {
+    "name": "Cristian Vera Lyon",
+    "url": "https://github.com/cveralyon"
+  },
+  "keywords": [
+    "claude-code",
+    "ai-agents",
+    "developer-tools",
+    "automation",
+    "devex",
+    "mcp",
+    "agentic-engineering",
+    "bootstrap"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cveralyon/axel-setup.git"
@@ -34,7 +48,9 @@
   "scripts": {
     "check": "bash scripts/ci/check.sh",
     "smoke": "bash scripts/ci/bootstrap-dry-run.sh",
-    "pack:dry-run": "npm pack --dry-run"
+    "pack:dry-run": "npm pack --dry-run",
+    "publish:dry-run": "npm publish --dry-run",
+    "prepublishOnly": "npm run check"
   },
   "engines": {
     "node": ">=18"
