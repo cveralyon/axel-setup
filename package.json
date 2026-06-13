@@ -1,6 +1,6 @@
 {
   "name": "axel-setup",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Claude Code-first team configuration package with hooks, agents, commands, skills, plugins, and repeatable bootstrap tooling.",
   "license": "MIT",
   "author": {

@@ -63,13 +63,4 @@ jobs:
 
       - name: Publish to npm
         if: steps.package.outputs.published != 'true'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
-            echo "Publishing with NPM_TOKEN fallback and explicit provenance."
-            npm publish --provenance --access public
-          else
-            echo "Publishing with npm Trusted Publishing via GitHub Actions OIDC."
-            npm publish --access public
-          fi
+        run: npm publish --access public

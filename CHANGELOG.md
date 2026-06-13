@@ -27,6 +27,14 @@ Releases are grouped by date and logical scope. npm package releases use semver 
 
 ---
 
+## [0.2.1] 2026-06-13 OIDC trusted publishing
+
+### Changed
+- Release workflow now publishes exclusively through npm Trusted Publishing (OIDC); removed the `NPM_TOKEN` fallback now that the package exists on the registry.
+- First release published with build provenance attestation generated from GitHub Actions.
+
+---
+
 ## [0.2.0] 2026-06-12 setup hardening and npm release
 
 ### Added
