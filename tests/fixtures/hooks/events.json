@@ -1,0 +1,32 @@
+{
+  "preToolUseAgentMissingModel": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Agent",
+    "tool_input": {
+      "description": "Audit installer behavior",
+      "prompt": "Review bootstrap profile side effects."
+    }
+  },
+  "preToolUseAgentWithModel": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Agent",
+    "tool_input": {
+      "description": "Audit installer behavior",
+      "prompt": "Review bootstrap profile side effects.",
+      "model": "sonnet"
+    }
+  },
+  "postToolUseEdit": {
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "src/example.js",
+      "old_string": "const enabled = false;",
+      "new_string": "const enabled = true;"
+    }
+  },
+  "sessionStop": {
+    "hook_event_name": "Stop",
+    "session_id": "fixture-session"
+  }
+}
