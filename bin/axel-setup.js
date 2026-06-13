@@ -14,6 +14,7 @@ function printHelp() {
   axel-setup [bootstrap options]
   axel-setup doctor [--target claude|codex|generic] [--home PATH] [--codex-home PATH] [--output PATH]
   axel-setup diff [--target claude|codex|generic] [--home PATH] [--codex-home PATH] [--output PATH]
+  axel-setup review-upgrades [--target claude|codex|generic] [--home PATH] [--codex-home PATH] [--output PATH]
   axel-setup uninstall [--target claude|codex|generic] [--home PATH] [--codex-home PATH] [--output PATH] [--apply]
 
 Bootstrap examples:
@@ -30,6 +31,7 @@ Doctor examples:
 
 Maintenance examples:
   axel-setup diff --target codex --codex-home /tmp/codex-home
+  axel-setup review-upgrades --home /tmp/axel-home
   axel-setup uninstall --target generic --output ./axel-runtime
   axel-setup uninstall --target generic --output ./axel-runtime --apply`);
 }
@@ -329,6 +331,31 @@ function runDiff(argv) {
   }
 }
 
+function runReviewUpgrades(argv) {
+  const { installRoot, manifestPath, target } = resolveRuntime(argv, "review-upgrades");
+  readInstalledManifest(manifestPath, target);
+
+  const upgradesDir = path.join(installRoot, "axel-upgrades");
+  const reviewPath = path.join(upgradesDir, "REVIEW.md");
+  const upgradeManifestPath = path.join(upgradesDir, "MANIFEST.md");
+
+  console.log("AXEL Upgrade Review");
+  console.log(`Target: ${target}`);
+  console.log(`Install root: ${installRoot}`);
+
+  if (!fs.existsSync(upgradeManifestPath)) {
+    console.log(`No upgrade proposals found at ${upgradesDir}`);
+    return;
+  }
+
+  if (fs.existsSync(reviewPath)) {
+    console.log(`Instructions: ${reviewPath}`);
+  }
+  console.log(`Manifest: ${upgradeManifestPath}`);
+  console.log("");
+  console.log(fs.readFileSync(upgradeManifestPath, "utf8").trimEnd());
+}
+
 function pruneEmptyParents(startDir, stopDir) {
   let current = startDir;
   while (current.startsWith(stopDir) && current !== stopDir) {
@@ -397,6 +424,11 @@ if (args[0] === "doctor") {
 
 if (args[0] === "diff") {
   runDiff(args.slice(1));
+  process.exit(0);
+}
+
+if (args[0] === "review-upgrades") {
+  runReviewUpgrades(args.slice(1));
   process.exit(0);
 }
 

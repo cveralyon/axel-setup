@@ -436,6 +436,55 @@ write_manifest() {
     "$SCRIPT_DIR/axel-manifest.json" > "$dest_dir/axel-manifest.json"
 }
 
+current_upgrade_path() {
+  local root_label="$1"
+  local category="$2"
+  local rel="$3"
+
+  case "$category" in
+    instructions) printf "%s/%s" "$root_label" "$rel" ;;
+    *) printf "%s/%s/%s" "$root_label" "$category" "$rel" ;;
+  esac
+}
+
+write_upgrade_review() {
+  local upgrades_dir="$1"
+  local root_label="$2"
+  local target_name="$3"
+  local category
+  local current_path
+  local rel
+
+  log "Generating upgrade review prompt..."
+  mkdir -p "$upgrades_dir"
+  cp "$SCRIPT_DIR/templates/review-upgrades.md" "$upgrades_dir/REVIEW.md"
+
+  cat > "$upgrades_dir/MANIFEST.md" << MANIFEST_EOF
+# AXEL Upgrade Manifest
+
+Generated: $(date +%Y-%m-%d\ %H:%M)
+Target: $target_name
+
+## Files to review
+
+These files already existed on your system but the AXEL package has improved versions.
+Your agent should compare and merge the best parts of each file before anything is applied.
+
+MANIFEST_EOF
+
+  for category in hooks commands agents skills scripts instructions tools templates; do
+    if [ -d "$upgrades_dir/$category" ]; then
+      echo "### $category" >> "$upgrades_dir/MANIFEST.md"
+      while IFS= read -r f; do
+        rel="${f#"$upgrades_dir/$category/"}"
+        current_path=$(current_upgrade_path "$root_label" "$category" "$rel")
+        echo "- \`$rel\`: upgrade at \`$upgrades_dir/$category/$rel\`, current at \`$current_path\`" >> "$upgrades_dir/MANIFEST.md"
+      done < <(find "$upgrades_dir/$category" -type f | sort)
+      echo "" >> "$upgrades_dir/MANIFEST.md"
+    fi
+  done
+}
+
 install_portable_target() {
   local runtime_root
   local upgrades_dir
@@ -522,6 +571,10 @@ install_portable_target() {
   fi
 
   write_manifest "$runtime_root"
+
+  if [ "$RUNTIME_UPGRADED" -gt 0 ] && ! $DRY_RUN; then
+    write_upgrade_review "$upgrades_dir" "$runtime_root" "$TARGET"
+  fi
 
   echo ""
   printf "${GREEN}${BOLD}============================================${RESET}\n"
@@ -905,7 +958,7 @@ EOF
   fi
   log "  MEMORY.md index is missing"
 else
-  MEMORY_COUNT=$(ls "$CLAUDE_DIR/memory/"*.md 2>/dev/null | grep -v MEMORY.md | wc -l | tr -d ' ')
+  MEMORY_COUNT=$(find "$CLAUDE_DIR/memory" -maxdepth 1 -type f -name '*.md' ! -name MEMORY.md | wc -l | tr -d ' ')
   log "  Memory intact: $MEMORY_COUNT existing memories preserved"
 fi
 
@@ -951,35 +1004,7 @@ fi
 TOTAL_UPGRADES=$((HOOKS_UPGRADED + CMDS_UPGRADED + AGENTS_UPGRADED + SKILLS_UPGRADED))
 
 if [ "$TOTAL_UPGRADES" -gt 0 ] && ! $DRY_RUN; then
-  log "Generating upgrade review prompt..."
-
-  # Copy the review prompt template
-  cp "$SCRIPT_DIR/templates/review-upgrades.md" "$UPGRADES_DIR/REVIEW.md"
-
-  # Generate manifest of what needs review
-  cat > "$UPGRADES_DIR/MANIFEST.md" << MANIFEST_EOF
-# AXEL Upgrade Manifest
-
-Generated: $(date +%Y-%m-%d\ %H:%M)
-
-## Files to review
-
-These files already existed on your system but the AXEL package has improved versions.
-Your Claude Code agent will help you compare and merge the best parts of each.
-
-MANIFEST_EOF
-
-  for category in hooks commands agents skills; do
-    if [ -d "$UPGRADES_DIR/$category" ]; then
-      echo "### $category" >> "$UPGRADES_DIR/MANIFEST.md"
-      for f in "$UPGRADES_DIR/$category/"*; do
-        [ -f "$f" ] || [ -d "$f" ] || continue
-        BASENAME=$(basename "$f")
-        echo "- \`$BASENAME\`: upgrade at \`~/.claude/axel-upgrades/$category/$BASENAME\`, current at \`~/.claude/$category/$BASENAME\`" >> "$UPGRADES_DIR/MANIFEST.md"
-      done
-      echo "" >> "$UPGRADES_DIR/MANIFEST.md"
-    fi
-  done
+  write_upgrade_review "$UPGRADES_DIR" "$HOME/.claude" "$TARGET"
 fi
 
 # ============================================================================

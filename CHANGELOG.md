@@ -9,6 +9,13 @@ Releases are grouped by date and logical scope. npm package releases use semver 
 
 ## [Unreleased]
 
+### Added
+- `axel-setup review-upgrades` for target-aware inspection of generated upgrade proposals before manual apply.
+
+### Fixed
+- Re-running the bootstrap with only `MEMORY.md` in the memory directory no longer exits early.
+- Portable targets now generate `axel-upgrades/REVIEW.md` and `MANIFEST.md` when local files differ from the package.
+
 ---
 
 ## [0.2.0] 2026-06-12 setup hardening and npm release

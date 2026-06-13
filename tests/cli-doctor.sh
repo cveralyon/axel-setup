@@ -67,6 +67,23 @@ printf '%s\n' "$uninstall_dry_run_output" | grep -q "Mode: dry-run"
 printf '%s\n' "$uninstall_dry_run_output" | grep -q "WOULD REMOVE commands/daily.md"
 assert_file "$install_home/.claude/commands/daily.md"
 
+printf '\n# local customization\n' >>"$install_home/.claude/commands/daily.md"
+PATH="$stub_bin:$PATH" HOME="$install_home" node "$ROOT/bin/axel-setup.js" \
+  --user-name "CI Bot" \
+  --profile minimal \
+  --skip-plugins \
+  --skip-gsd \
+  --no-launchd >/dev/null
+
+assert_file "$install_home/.claude/axel-upgrades/MANIFEST.md"
+assert_file "$install_home/.claude/axel-upgrades/REVIEW.md"
+
+review_output="$(node "$ROOT/bin/axel-setup.js" review-upgrades --home "$install_home")"
+printf '%s\n' "$review_output" | grep -q "AXEL Upgrade Review"
+printf '%s\n' "$review_output" | grep -q "Target: claude"
+printf '%s\n' "$review_output" | grep -q "commands"
+printf '%s\n' "$review_output" | grep -q "daily.md"
+
 rm "$install_home/.claude/hooks/enforce-agent-model.jq"
 
 set +e
@@ -125,6 +142,31 @@ if [ -e "$generic_home/.claude" ]; then
   echo "Generic target should not write Claude config" >&2
   exit 1
 fi
+
+generic_review_output_dir="$TMP_ROOT/generic-review-output"
+
+PATH="$stub_bin:$PATH" HOME="$generic_home" node "$ROOT/bin/axel-setup.js" \
+  --target generic \
+  --output "$generic_review_output_dir" \
+  --user-name "CI Bot" \
+  --profile minimal >/dev/null
+
+printf '\n# local runtime edit\n' >>"$generic_review_output_dir/AGENTS.md"
+
+PATH="$stub_bin:$PATH" HOME="$generic_home" node "$ROOT/bin/axel-setup.js" \
+  --target generic \
+  --output "$generic_review_output_dir" \
+  --user-name "CI Bot" \
+  --profile minimal >/dev/null
+
+assert_file "$generic_review_output_dir/axel-upgrades/MANIFEST.md"
+assert_file "$generic_review_output_dir/axel-upgrades/REVIEW.md"
+
+generic_review_output="$(node "$ROOT/bin/axel-setup.js" review-upgrades --target generic --output "$generic_review_output_dir")"
+printf '%s\n' "$generic_review_output" | grep -q "AXEL Upgrade Review"
+printf '%s\n' "$generic_review_output" | grep -q "Target: generic"
+printf '%s\n' "$generic_review_output" | grep -q "instructions"
+printf '%s\n' "$generic_review_output" | grep -q "AGENTS.md"
 
 generic_diff_output="$(node "$ROOT/bin/axel-setup.js" diff --target generic --output "$generic_output")"
 printf '%s\n' "$generic_diff_output" | grep -q "MATCH AGENTS.md"
