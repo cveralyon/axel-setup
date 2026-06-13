@@ -4,6 +4,24 @@
     "name": "axel-setup",
     "version": "0.2.0"
   },
+  "defaultTarget": "claude",
+  "targets": {
+    "claude": {
+      "description": "Full Claude Code install with hooks, commands, agents, skills, settings, plugins, and optional monitor tooling.",
+      "defaultRoot": "~/.claude",
+      "fullySupported": true
+    },
+    "codex": {
+      "description": "Portable Codex install with AGENTS instructions, skills, commands, agents, scripts, and manifest. Claude-only hooks and plugins are skipped.",
+      "defaultRoot": "$CODEX_HOME or ~/.codex",
+      "fullySupported": false
+    },
+    "generic": {
+      "description": "Export-only bundle for other agent runtimes. Writes only to the caller-provided output directory.",
+      "defaultRoot": "--output <dir>",
+      "fullySupported": false
+    }
+  },
   "profiles": {
     "personal": {
       "description": "Full personal setup with permissive local automation.",
@@ -29,52 +47,69 @@
   "requiredPaths": [
     {
       "path": "settings.json",
+      "targets": ["claude"],
       "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "hooks/enforce-agent-model.jq",
+      "targets": ["claude"],
       "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "hooks/validate-commit-format.sh",
+      "targets": ["claude"],
       "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "commands/daily.md",
+      "targets": ["claude", "codex", "generic"],
       "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "agents/excelsior-verifier.md",
+      "targets": ["claude", "codex", "generic"],
       "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "skills/model-routing/SKILL.md",
+      "targets": ["claude", "codex", "generic"],
       "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "skills/ui-ux-pro-max/SKILL.md",
+      "targets": ["claude", "codex", "generic"],
       "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "skills/ui-ux-pro-max/data/colors.csv",
+      "targets": ["claude", "codex", "generic"],
       "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "skills/ui-ux-pro-max/scripts/search.py",
+      "targets": ["claude", "codex", "generic"],
+      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+    },
+    {
+      "path": "AGENTS.md",
+      "targets": ["codex", "generic"],
       "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "scripts/posthog-snapshot-loader.sh",
+      "targets": ["claude", "codex", "generic"],
       "profiles": ["personal", "team-safe", "full"],
       "optionalFlag": "enable-posthog"
     },
     {
       "path": "tools/session-server.js",
+      "targets": ["claude"],
       "profiles": ["personal", "team-safe", "full"],
       "skipFlag": "skip-monitor"
     },
     {
       "path": "keybindings.json",
+      "targets": ["claude"],
       "profiles": ["personal", "team-safe", "full"],
       "skipFlag": "skip-keybindings"
     }

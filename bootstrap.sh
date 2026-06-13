@@ -33,8 +33,11 @@ set -euo pipefail
 # --- Configuration ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
+CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
 BACKUP_DIR="$CLAUDE_DIR/backups/pre-axel-$(date +%Y%m%d_%H%M%S)"
 DRY_RUN=false
+TARGET="claude"
+OUTPUT_DIR=""
 USER_NAME=""
 USER_CONTEXT=""
 ASSISTANT_LANGUAGE=""
@@ -90,6 +93,8 @@ while [[ $# -gt 0 ]]; do
     --enable-posthog) ENABLE_POSTHOG=true; shift ;;
     --posthog-context) POSTHOG_PROJECT_CONTEXT="$2"; shift 2 ;;
     --profile) PROFILE="$2"; shift 2 ;;
+    --target) TARGET="$2"; shift 2 ;;
+    --output) OUTPUT_DIR="$2"; shift 2 ;;
     --skip-plugins) SKIP_PLUGINS=true; shift ;;
     --skip-monitor) SKIP_MONITOR=true; shift ;;
     --skip-keybindings) SKIP_KEYBINDINGS=true; shift ;;
@@ -118,6 +123,9 @@ while [[ $# -gt 0 ]]; do
       echo "                          sourcing'. Helps the agent frame findings."
       echo "  --profile NAME          Install profile: personal, team-safe, minimal,"
       echo "                          ci, or full. Defaults to personal."
+      echo "  --target NAME           Runtime target: claude, codex, or generic."
+      echo "                          Defaults to claude."
+      echo "  --output DIR            Export directory for --target generic"
       echo "  --skip-plugins          Do not install Claude marketplace plugins"
       echo "  --skip-monitor          Do not install usage monitor tools"
       echo "  --skip-keybindings      Do not install keybindings.json"
@@ -136,6 +144,17 @@ case "$PROFILE" in
   personal|team-safe|minimal|ci|full) ;;
   *) error "Unknown profile: $PROFILE"; exit 1 ;;
 esac
+
+case "$TARGET" in
+  default) TARGET="claude" ;;
+  claude|codex|generic) ;;
+  *) error "Unknown target: $TARGET"; exit 1 ;;
+esac
+
+if [ "$TARGET" = "generic" ] && [ -z "$OUTPUT_DIR" ]; then
+  error "--output is required when using --target generic"
+  exit 1
+fi
 
 case "$PROFILE" in
   minimal)
@@ -164,7 +183,9 @@ check_cmd() {
 }
 
 MISSING=0
-check_cmd "claude" || MISSING=1
+if [ "$TARGET" = "claude" ]; then
+  check_cmd "claude" || MISSING=1
+fi
 check_cmd "node" || MISSING=1
 check_cmd "jq" || MISSING=1
 check_cmd "python3" || MISSING=1
@@ -210,6 +231,7 @@ if $ENABLE_POSTHOG; then
   info "PostHog integration: ENABLED. Will install /posthog-weekly skill + snapshot loader."
   info "  Project context: $POSTHOG_PROJECT_CONTEXT"
 fi
+info "Install target: $TARGET"
 
 # --- Dry run guard ---
 run() {
@@ -326,6 +348,199 @@ add_or_upgrade() {
     eval "$added_var=\$((\$$added_var + 1))"
   fi
 }
+
+runtime_root_for_target() {
+  case "$TARGET" in
+    codex) printf "%s" "$CODEX_DIR" ;;
+    generic) printf "%s" "$OUTPUT_DIR" ;;
+    *) printf "%s" "$CLAUDE_DIR" ;;
+  esac
+}
+
+copy_runtime_asset() {
+  local src="$1"
+  local dest="$2"
+  local label="$3"
+  local category="$4"
+  local upgrades_dir="$5"
+  local proposed=""
+  local compare_src="$src"
+
+  if [ "$(basename "$src")" = "SKILL.md" ]; then
+    proposed=$(mktemp)
+    write_processed_skill "$src" "$proposed"
+    compare_src="$proposed"
+  fi
+
+  if [ -f "$dest" ]; then
+    if ! diff -q "$compare_src" "$dest" >/dev/null 2>&1; then
+      if $DRY_RUN; then
+        info "[DRY RUN] Would propose upgrade: $label"
+      else
+        mkdir -p "$upgrades_dir/$category/$(dirname "$label")"
+        cp "$compare_src" "$upgrades_dir/$category/$label"
+      fi
+      upgrade "$label"
+      RUNTIME_UPGRADED=$((RUNTIME_UPGRADED + 1))
+    fi
+  else
+    if $DRY_RUN; then
+      info "[DRY RUN] Would add: $label"
+    else
+      mkdir -p "$(dirname "$dest")"
+      cp "$compare_src" "$dest"
+    fi
+    RUNTIME_ADDED=$((RUNTIME_ADDED + 1))
+  fi
+
+  if [ -n "$proposed" ]; then
+    rm -f "$proposed"
+  fi
+}
+
+write_manifest() {
+  local dest_dir="$1"
+
+  if $DRY_RUN; then
+    info "[DRY RUN] Would install axel-manifest.json with target: $TARGET, profile: $PROFILE"
+    return
+  fi
+
+  jq \
+    --arg profile "$PROFILE" \
+    --arg target "$TARGET" \
+    --arg installedRoot "$dest_dir" \
+    --argjson skipPlugins "$SKIP_PLUGINS" \
+    --argjson skipMonitor "$SKIP_MONITOR" \
+    --argjson skipKeybindings "$SKIP_KEYBINDINGS" \
+    --argjson skipClaudeMd "$SKIP_CLAUDE_MD" \
+    --argjson skipGsd "$SKIP_GSD" \
+    --argjson noLaunchd "$NO_LAUNCHD" \
+    --argjson enablePosthog "$ENABLE_POSTHOG" \
+    '. + {
+      profile: $profile,
+      target: $target,
+      installedRoot: $installedRoot,
+      enabled: {
+        "enable-posthog": $enablePosthog
+      },
+      skipped: {
+        "skip-plugins": $skipPlugins,
+        "skip-monitor": $skipMonitor,
+        "skip-keybindings": $skipKeybindings,
+        "skip-claude-md": $skipClaudeMd,
+        "skip-gsd": $skipGsd,
+        "no-launchd": $noLaunchd
+      }
+    }' \
+    "$SCRIPT_DIR/axel-manifest.json" > "$dest_dir/axel-manifest.json"
+}
+
+install_portable_target() {
+  local runtime_root
+  local upgrades_dir
+
+  runtime_root=$(runtime_root_for_target)
+  upgrades_dir="$runtime_root/axel-upgrades"
+  RUNTIME_ADDED=0
+  RUNTIME_UPGRADED=0
+
+  log "Installing AXEL portable runtime assets..."
+  info "Runtime root: $runtime_root"
+  info "Claude-only hooks, settings, plugins, keybindings, launchd, and GSD installers are skipped for target: $TARGET"
+
+  for dir in skills agents commands scripts; do
+    run mkdir -p "$runtime_root/$dir"
+  done
+
+  copy_runtime_asset \
+    "$SCRIPT_DIR/templates/AGENTS.runtime.md" \
+    "$runtime_root/AGENTS.md" \
+    "AGENTS.md" \
+    "instructions" \
+    "$upgrades_dir"
+
+  if [ -d "$SCRIPT_DIR/skills" ]; then
+    for skill_dir in "$SCRIPT_DIR/skills/"*/; do
+      [ -d "$skill_dir" ] || continue
+      SKILL_NAME=$(basename "$skill_dir")
+      if [ "$SKILL_NAME" = "posthog-weekly" ] && ! $ENABLE_POSTHOG; then
+        info "  skip: posthog-weekly (use --enable-posthog to install)"
+        continue
+      fi
+
+      while IFS= read -r -d '' skill_file; do
+        rel="${skill_file#"$skill_dir"}"
+        copy_runtime_asset \
+          "$skill_file" \
+          "$runtime_root/skills/$SKILL_NAME/$rel" \
+          "skills/$SKILL_NAME/$rel" \
+          "skills" \
+          "$upgrades_dir"
+      done < <(find "$skill_dir" -type f ! -path '*/__pycache__/*' ! -name '*.pyc' -print0)
+    done
+  fi
+
+  for agent_file in "$SCRIPT_DIR/agents/"*.md; do
+    [ -f "$agent_file" ] || continue
+    copy_runtime_asset \
+      "$agent_file" \
+      "$runtime_root/agents/$(basename "$agent_file")" \
+      "agents/$(basename "$agent_file")" \
+      "agents" \
+      "$upgrades_dir"
+  done
+
+  for cmd_file in "$SCRIPT_DIR/commands/"*.md; do
+    [ -f "$cmd_file" ] || continue
+    copy_runtime_asset \
+      "$cmd_file" \
+      "$runtime_root/commands/$(basename "$cmd_file")" \
+      "commands/$(basename "$cmd_file")" \
+      "commands" \
+      "$upgrades_dir"
+  done
+
+  if [ -d "$SCRIPT_DIR/scripts" ]; then
+    for script_file in "$SCRIPT_DIR/scripts/"*.sh; do
+      [ -f "$script_file" ] || continue
+      BASE_SCRIPT=$(basename "$script_file")
+      if [ "$BASE_SCRIPT" = "posthog-snapshot-loader.sh" ] && ! $ENABLE_POSTHOG; then
+        info "  skip: $BASE_SCRIPT (use --enable-posthog to install)"
+        continue
+      fi
+      copy_runtime_asset \
+        "$script_file" \
+        "$runtime_root/scripts/$BASE_SCRIPT" \
+        "scripts/$BASE_SCRIPT" \
+        "scripts" \
+        "$upgrades_dir"
+      if ! $DRY_RUN; then
+        chmod +x "$runtime_root/scripts/$BASE_SCRIPT"
+      fi
+    done
+  fi
+
+  write_manifest "$runtime_root"
+
+  echo ""
+  printf "${GREEN}${BOLD}============================================${RESET}\n"
+  printf "${GREEN}${BOLD}  AXEL Portable Runtime Complete!${RESET}\n"
+  printf "${GREEN}${BOLD}============================================${RESET}\n"
+  echo ""
+  info "Target: $TARGET"
+  info "Profile: $PROFILE"
+  info "Runtime root: $runtime_root"
+  info "Files added: $RUNTIME_ADDED"
+  info "Upgrades available: $RUNTIME_UPGRADED"
+  info "Claude Code remains the default target. This target installs portable AXEL assets only."
+  echo ""
+}
+
+if [ "$TARGET" != "claude" ]; then
+  install_portable_target
+  exit 0
+fi
 
 # --- Backup existing config (safety net, always) ---
 if [ -d "$CLAUDE_DIR" ] && [ -f "$CLAUDE_DIR/settings.json" ]; then
@@ -588,34 +803,7 @@ rm -f "$AXEL_SETTINGS_PROFILED"
 # 6b. AXEL MANIFEST — Machine-readable install inventory for doctor/tests
 # ============================================================================
 log "Installing AXEL manifest..."
-if $DRY_RUN; then
-  info "[DRY RUN] Would install axel-manifest.json with profile: $PROFILE"
-else
-  jq \
-    --arg profile "$PROFILE" \
-    --argjson skipPlugins "$SKIP_PLUGINS" \
-    --argjson skipMonitor "$SKIP_MONITOR" \
-    --argjson skipKeybindings "$SKIP_KEYBINDINGS" \
-    --argjson skipClaudeMd "$SKIP_CLAUDE_MD" \
-    --argjson skipGsd "$SKIP_GSD" \
-    --argjson noLaunchd "$NO_LAUNCHD" \
-    --argjson enablePosthog "$ENABLE_POSTHOG" \
-    '. + {
-      profile: $profile,
-      enabled: {
-        "enable-posthog": $enablePosthog
-      },
-      skipped: {
-        "skip-plugins": $skipPlugins,
-        "skip-monitor": $skipMonitor,
-        "skip-keybindings": $skipKeybindings,
-        "skip-claude-md": $skipClaudeMd,
-        "skip-gsd": $skipGsd,
-        "no-launchd": $noLaunchd
-      }
-    }' \
-    "$SCRIPT_DIR/axel-manifest.json" > "$CLAUDE_DIR/axel-manifest.json"
-fi
+write_manifest "$CLAUDE_DIR"
 
 # ============================================================================
 # 7. STATUSLINE — Add only if not present
@@ -804,6 +992,7 @@ printf "${GREEN}${BOLD}============================================${RESET}\n"
 echo ""
 log "All changes are ADDITIVE — nothing was overwritten or deleted."
 info "Install profile: $PROFILE"
+info "Install target: $TARGET"
 if $DRY_RUN; then
   info "Safety backup would be at: $BACKUP_DIR"
 else
