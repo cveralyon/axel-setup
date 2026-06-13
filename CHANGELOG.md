@@ -15,6 +15,7 @@ Releases are grouped by date and logical scope. npm package releases use semver 
 - Release automation now supports npm Trusted Publishing via GitHub Actions OIDC, with an `NPM_TOKEN` provenance fallback for first publish or migration windows.
 - `install.sh` curl wrapper for a macOS one-line install path that delegates to the packaged AXEL release.
 - Fixture-driven hook harness covering PreToolUse model routing, PostToolUse action logging, and Stop session persistence without a live Claude session.
+- `axel-setup metrics [--json]` report for context-budget, usage-monitor, and hook-harness impact signals generated from package assets and public fixtures only.
 
 ### Changed
 - Default installs now use `--profile core`, keeping `personal` and `full` as explicit choices for fuller local automation.

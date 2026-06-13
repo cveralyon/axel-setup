@@ -15,6 +15,7 @@ function printHelp() {
   axel-setup doctor [--target claude|codex|generic] [--home PATH] [--codex-home PATH] [--output PATH]
   axel-setup diff [--target claude|codex|generic] [--home PATH] [--codex-home PATH] [--output PATH]
   axel-setup review-upgrades [--target claude|codex|generic] [--home PATH] [--codex-home PATH] [--output PATH]
+  axel-setup metrics [--json]
   axel-setup uninstall [--target claude|codex|generic] [--home PATH] [--codex-home PATH] [--output PATH] [--apply]
 
 Bootstrap examples:
@@ -32,6 +33,8 @@ Doctor examples:
 Maintenance examples:
   axel-setup diff --target codex --codex-home /tmp/codex-home
   axel-setup review-upgrades --home /tmp/axel-home
+  axel-setup metrics
+  axel-setup metrics --json
   axel-setup uninstall --target generic --output ./axel-runtime
   axel-setup uninstall --target generic --output ./axel-runtime --apply`);
 }
@@ -94,6 +97,10 @@ function requireValue(argv, index, arg) {
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
+function readText(filePath) {
+  return fs.readFileSync(filePath, "utf8");
 }
 
 function resolveRuntime(argv, command) {
@@ -356,6 +363,142 @@ function runReviewUpgrades(argv) {
   console.log(fs.readFileSync(upgradeManifestPath, "utf8").trimEnd());
 }
 
+function countMatches(text, regex) {
+  return (text.match(regex) || []).length;
+}
+
+function extractSection(text, startHeading, endHeading) {
+  const start = text.indexOf(startHeading);
+  if (start === -1) {
+    return "";
+  }
+
+  const end = text.indexOf(endHeading, start + startHeading.length);
+  return end === -1 ? text.slice(start) : text.slice(start, end);
+}
+
+function parseMetricsArgs(argv) {
+  let json = false;
+
+  for (const arg of argv) {
+    if (arg === "--json") {
+      json = true;
+    } else if (arg === "-h" || arg === "--help") {
+      printHelp();
+      process.exit(0);
+    } else {
+      console.error(`Unknown metrics option: ${arg}`);
+      process.exit(1);
+    }
+  }
+
+  return { json };
+}
+
+function buildMetricsReport() {
+  const contextBudgetSkill = readText(path.join(root, "skills/context-budget/SKILL.md"));
+  const phaseOne = extractSection(contextBudgetSkill, "### Phase 1", "### Phase 2");
+  const phaseThree = extractSection(contextBudgetSkill, "### Phase 3", "### Phase 4");
+
+  const contextBudget = {
+    avoidedFailures: [
+      "context window exhaustion before handoff",
+      "stale or duplicated agent and skill surface",
+      "overloaded MCP tool context",
+    ],
+    name: "context-budget",
+    protectedWorkflows: ["setup overhead audit", "token headroom review"],
+    signals: {
+      inventoryChecks: countMatches(phaseOne, /^- \*\*/gm),
+      issueDetectors: countMatches(phaseThree, /^- /gm),
+      reportTemplate: contextBudgetSkill.includes("Context Budget Report") ? 1 : 0,
+    },
+    source: "skills/context-budget/SKILL.md",
+  };
+
+  const costLogHook = readText(path.join(root, "hooks/session-cost-log.sh"));
+  const contextMonitor = readText(path.join(root, "hooks/gsd-context-monitor.js"));
+  const csvHeader = costLogHook.match(/echo "([^"]*session_id[^"]*)" > "\$LOG_FILE"/)?.[1] || "";
+  const usageMonitor = {
+    avoidedFailures: [
+      "silent cost growth",
+      "unnoticed context pressure",
+      "rate-limit surprises during long sessions",
+    ],
+    name: "usage-monitor",
+    protectedWorkflows: ["session cost review", "live context warning", "dashboard inspection"],
+    signals: {
+      costLogFields: csvHeader ? csvHeader.split(",").length : 0,
+      dashboardTools: ["session-live.sh", "session-costs-view.sh", "session-dashboard-gen.sh", "session-server.js"].filter(
+        (fileName) => fs.existsSync(path.join(root, "tools", fileName)),
+      ).length,
+      warningThresholdRemainingPct: Number(contextMonitor.match(/WARNING_THRESHOLD = (\d+)/)?.[1] || 0),
+      criticalThresholdRemainingPct: Number(contextMonitor.match(/CRITICAL_THRESHOLD = (\d+)/)?.[1] || 0),
+      debounceToolCalls: Number(contextMonitor.match(/DEBOUNCE_CALLS = (\d+)/)?.[1] || 0),
+    },
+    source: "hooks/session-cost-log.sh + hooks/gsd-context-monitor.js + tools/session-*",
+  };
+
+  const hookFixtures = readJson(path.join(root, "tests/fixtures/hooks/events.json"));
+  const hookEvents = Object.values(hookFixtures).map((event) => event.hook_event_name).filter(Boolean);
+  const hookHarness = {
+    avoidedFailures: [
+      "subagents inheriting the most expensive session model",
+      "lost edit/action history before session persistence",
+      "Stop hook regressions that break next-session context",
+    ],
+    name: "hook-harness",
+    protectedWorkflows: ["Agent model routing", "tool action logging", "session persistence"],
+    signals: {
+      fixtures: Object.keys(hookFixtures).length,
+      hookPhases: new Set(hookEvents).size,
+      regressionAssertions: 6,
+    },
+    source: "tests/fixtures/hooks/events.json + tests/hook-harness.sh",
+  };
+
+  const areas = [contextBudget, usageMonitor, hookHarness].map((area) => ({
+    ...area,
+    comparable: {
+      avoidedFailures: area.avoidedFailures.length,
+      protectedWorkflows: area.protectedWorkflows.length,
+      signalKinds: Object.keys(area.signals).length,
+    },
+  }));
+
+  return {
+    areas,
+    generatedFrom: "package assets and checked-in fixtures",
+    privacy: "No private local session logs, prompts, costs, tokens, or repository paths are read.",
+  };
+}
+
+function runMetrics(argv) {
+  const { json } = parseMetricsArgs(argv);
+  const report = buildMetricsReport();
+
+  if (json) {
+    console.log(JSON.stringify(report, null, 2));
+    return;
+  }
+
+  console.log("AXEL Metrics");
+  console.log(`Generated from: ${report.generatedFrom}`);
+  console.log(`Privacy: ${report.privacy}`);
+
+  for (const area of report.areas) {
+    console.log("");
+    console.log(`${area.name}`);
+    console.log(`  Source: ${area.source}`);
+    console.log(
+      `  Comparable: ${area.comparable.signalKinds} signal kinds, ${area.comparable.protectedWorkflows} protected workflows, ${area.comparable.avoidedFailures} avoided failures`,
+    );
+    console.log(`  Signals: ${JSON.stringify(area.signals)}`);
+    console.log(`  Protected workflows: ${area.protectedWorkflows.join("; ")}`);
+    console.log(`  Avoided failures: ${area.avoidedFailures.join("; ")}`);
+  }
+}
+
 function pruneEmptyParents(startDir, stopDir) {
   let current = startDir;
   while (current.startsWith(stopDir) && current !== stopDir) {
@@ -429,6 +572,11 @@ if (args[0] === "diff") {
 
 if (args[0] === "review-upgrades") {
   runReviewUpgrades(args.slice(1));
+  process.exit(0);
+}
+
+if (args[0] === "metrics") {
+  runMetrics(args.slice(1));
   process.exit(0);
 }
 

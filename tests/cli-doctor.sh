@@ -191,6 +191,19 @@ printf '%s\n' "$generic_review_output" | grep -q "Target: generic"
 printf '%s\n' "$generic_review_output" | grep -q "instructions"
 printf '%s\n' "$generic_review_output" | grep -q "AGENTS.md"
 
+metrics_output="$(node "$ROOT/bin/axel-setup.js" metrics)"
+printf '%s\n' "$metrics_output" | grep -q "AXEL Metrics"
+printf '%s\n' "$metrics_output" | grep -q "context-budget"
+printf '%s\n' "$metrics_output" | grep -q "usage-monitor"
+printf '%s\n' "$metrics_output" | grep -q "hook-harness"
+printf '%s\n' "$metrics_output" | grep -q "Avoided failures"
+
+metrics_json="$(node "$ROOT/bin/axel-setup.js" metrics --json)"
+printf '%s\n' "$metrics_json" | jq -e '.privacy | contains("No private local session logs")' >/dev/null
+printf '%s\n' "$metrics_json" | jq -e '.areas[] | select(.name == "context-budget") | .signals.inventoryChecks >= 6' >/dev/null
+printf '%s\n' "$metrics_json" | jq -e '.areas[] | select(.name == "usage-monitor") | .signals.costLogFields == 11' >/dev/null
+printf '%s\n' "$metrics_json" | jq -e '.areas[] | select(.name == "hook-harness") | .signals.hookPhases == 3' >/dev/null
+
 generic_diff_output="$(node "$ROOT/bin/axel-setup.js" diff --target generic --output "$generic_output")"
 printf '%s\n' "$generic_diff_output" | grep -q "MATCH AGENTS.md"
 printf '%s\n' "$generic_diff_output" | grep -q "PRESENT axel-manifest.json (manifest)"
