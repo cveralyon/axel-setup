@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "package": {
+    "name": "axel-setup",
+    "version": "0.2.0"
+  },
+  "profiles": {
+    "personal": {
+      "description": "Full personal setup with permissive local automation.",
+      "safePermissions": false
+    },
+    "team-safe": {
+      "description": "Team-friendly setup with safer Claude permission defaults.",
+      "safePermissions": true
+    },
+    "minimal": {
+      "description": "Small install surface for evaluation and CI smoke tests.",
+      "safePermissions": true
+    },
+    "ci": {
+      "description": "CI-safe profile with external installers and launchd disabled.",
+      "safePermissions": true
+    },
+    "full": {
+      "description": "Alias for all bundled AXEL components.",
+      "safePermissions": false
+    }
+  },
+  "requiredPaths": [
+    {
+      "path": "settings.json",
+      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+    },
+    {
+      "path": "hooks/enforce-agent-model.jq",
+      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+    },
+    {
+      "path": "hooks/validate-commit-format.sh",
+      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+    },
+    {
+      "path": "commands/daily.md",
+      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+    },
+    {
+      "path": "agents/excelsior-verifier.md",
+      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+    },
+    {
+      "path": "skills/model-routing/SKILL.md",
+      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+    },
+    {
+      "path": "skills/ui-ux-pro-max/SKILL.md",
+      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+    },
+    {
+      "path": "skills/ui-ux-pro-max/data/colors.csv",
+      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+    },
+    {
+      "path": "skills/ui-ux-pro-max/scripts/search.py",
+      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+    },
+    {
+      "path": "scripts/posthog-snapshot-loader.sh",
+      "profiles": ["personal", "team-safe", "full"],
+      "optionalFlag": "enable-posthog"
+    },
+    {
+      "path": "tools/session-server.js",
+      "profiles": ["personal", "team-safe", "full"],
+      "skipFlag": "skip-monitor"
+    },
+    {
+      "path": "keybindings.json",
+      "profiles": ["personal", "team-safe", "full"],
+      "skipFlag": "skip-keybindings"
+    }
+  ],
+  "externalIntegrations": [
+    {
+      "id": "gsd",
+      "name": "get-shit-done-cc",
+      "managedExternally": true,
+      "installCommand": "npx -y get-shit-done-cc@latest"
+    }
+  ]
+}

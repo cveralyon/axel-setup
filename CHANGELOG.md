@@ -7,6 +7,26 @@ Releases are grouped by date and logical scope. npm package releases use semver 
 
 ---
 
+## [Unreleased]
+
+---
+
+## [0.2.0] 2026-06-12 setup hardening and npm release
+
+### Added
+- Install profiles: `personal`, `team-safe`, `minimal`, `ci`, and `full`.
+- Bootstrap flags for CI and safer installs: `--skip-plugins`, `--skip-monitor`, `--skip-keybindings`, `--skip-claude-md`, `--skip-gsd`, and `--no-launchd`.
+- Machine-readable `axel-manifest.json` installed into `~/.claude/axel-manifest.json`.
+- `axel-setup doctor [--home PATH]` to verify installed files against the manifest.
+- Integration tests for dry-run behavior, real temp-home installation, recursive skill assets, CLI doctor, and `merge-settings.jq` fixtures.
+- GitHub Actions release workflow for `v*` tags that verifies the tag matches `package.json`, re-runs repository validation, skips already-published versions, and publishes `axel-setup` to npm with provenance when `NPM_TOKEN` is configured.
+
+### Changed
+- `--dry-run` now keeps installer filesystem writes read-only.
+- Skill installation now copies nested assets recursively while excluding Python cache files.
+- CI now installs `shellcheck` and `shfmt`; `npm run check` owns shell syntax, shellcheck, shfmt, JSON, jq, integration tests, and package dry-run validation.
+- README now documents `npx axel-setup` as the primary install path, release automation, profiles, skip flags, and `doctor`.
+
 ## [0.1.1] 2026-06-12 npm publish hardening
 
 Prepare the npm package for the first public registry publish without changing bootstrap behavior.

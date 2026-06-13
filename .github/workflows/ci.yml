@@ -14,7 +14,7 @@ env:
 
 jobs:
   validate:
-    name: Validate package and bootstrap
+    name: Validate package, shell tooling, and bootstrap
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,10 +25,10 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install jq
+      - name: Install tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq zsh
+          sudo apt-get install -y jq zsh shellcheck shfmt
 
       - name: Run repository checks
         run: npm run check

@@ -32,16 +32,16 @@ The goal is not to hide local preferences inside one private setup. The goal is 
 
 ## Quick Start
 
-Run directly from GitHub through npm:
-
-```bash
-npx github:cveralyon/axel-setup --dry-run --user-name "Your Name"
-```
-
-After the npm package is published:
+The npm registry install is the primary path:
 
 ```bash
 npx axel-setup --dry-run --user-name "Your Name"
+```
+
+Use the GitHub-hosted entrypoint when you want the repo tip before a registry release:
+
+```bash
+npx github:cveralyon/axel-setup --dry-run --user-name "Your Name"
 ```
 
 Or clone the repository:
@@ -69,6 +69,32 @@ From another directory, pass the package path explicitly:
 ```bash
 npm publish /Users/cveralyon/axel-onboarding --access public
 ```
+
+### Maintainer Release Automation
+
+The repository includes a tag-driven npm release workflow in [`.github/workflows/release.yml`](.github/workflows/release.yml). It is designed for GitHub Actions npm publishing with provenance.
+
+Before the first automated release:
+- Configure an npm automation token as the `NPM_TOKEN` repository secret.
+- Make sure the package version in `package.json` and the changelog entry are ready.
+- Verify the package locally with `npm run check` and `npm run publish:dry-run`.
+
+Release flow:
+
+```bash
+git tag v0.2.1
+git push origin v0.2.1
+```
+
+The workflow installs `shellcheck` and `shfmt`, runs `npm run check`, then publishes with `npm publish --provenance --access public` when the version is not already on npm. It also rejects tags that do not match `package.json` version.
+
+### Setup Hardening CLI Surface
+
+The setup hardening release makes the published CLI easier to operate in CI, corporate environments, and third-party installs:
+
+- `--profile minimal` for lean installs with a smaller default footprint.
+- `--skip-plugins`, `--skip-gsd`, and `--no-launchd` so maintainers and CI can suppress optional side effects.
+- `npx axel-setup doctor --home ~/.claude` to verify that an installation matches the shipped manifest and report missing files.
 
 Advanced: pass extra context so the Stop hooks personalize their prompts:
 
