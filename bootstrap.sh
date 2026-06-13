@@ -43,7 +43,7 @@ USER_CONTEXT=""
 ASSISTANT_LANGUAGE=""
 ENABLE_POSTHOG=false
 POSTHOG_PROJECT_CONTEXT=""
-PROFILE="personal"
+PROFILE="core"
 SKIP_PLUGINS=false
 SKIP_MONITOR=false
 SKIP_KEYBINDINGS=false
@@ -121,8 +121,8 @@ while [[ $# -gt 0 ]]; do
       echo "                          description used in the analytical prompt,"
       echo "                          e.g. 'Acme ATS — recruiting platform with AI"
       echo "                          sourcing'. Helps the agent frame findings."
-      echo "  --profile NAME          Install profile: personal, team-safe, minimal,"
-      echo "                          ci, or full. Defaults to personal."
+      echo "  --profile NAME          Install profile: core, personal, team-safe,"
+      echo "                          minimal, ci, or full. Defaults to core."
       echo "  --target NAME           Runtime target: claude, codex, or generic."
       echo "                          Defaults to claude."
       echo "  --output DIR            Export directory for --target generic"
@@ -140,8 +140,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$PROFILE" in
-  default) PROFILE="personal" ;;
-  personal|team-safe|minimal|ci|full) ;;
+  default) PROFILE="core" ;;
+  core|personal|team-safe|minimal|ci|full) ;;
   *) error "Unknown profile: $PROFILE"; exit 1 ;;
 esac
 
@@ -157,6 +157,13 @@ if [ "$TARGET" = "generic" ] && [ -z "$OUTPUT_DIR" ]; then
 fi
 
 case "$PROFILE" in
+  core)
+    SKIP_PLUGINS=true
+    SKIP_MONITOR=true
+    SKIP_KEYBINDINGS=true
+    SKIP_GSD=true
+    NO_LAUNCHD=true
+    ;;
   minimal)
     SKIP_PLUGINS=true
     SKIP_MONITOR=true
@@ -1060,12 +1067,21 @@ info "  Your existing hooks, commands, and agents"
 echo ""
 
 info "Next steps:"
-info "  1. Restart Claude Code to load new plugins"
+info "  1. Restart Claude Code to load AXEL updates"
+if $SKIP_GSD; then
+  TRY_COMMANDS="/daily, /style"
+else
+  TRY_COMMANDS="/daily, /style, /gsd-help"
+fi
 if [ "$TOTAL_UPGRADES" -gt 0 ]; then
   info "  2. Review upgrades: paste the command above into Claude Code"
-  info "  3. Try: /daily, /style, /gsd-help"
+  info "  3. Try: $TRY_COMMANDS"
 else
-  info "  2. Try: /daily, /style, /gsd-help"
+  info "  2. Try: $TRY_COMMANDS"
 fi
-info "  AXEL will continue learning your personal preferences"
+if [ "$PROFILE" = "core" ]; then
+  info "  AXEL installed public safe defaults. Use --profile personal for fuller local automation."
+else
+  info "  AXEL will continue learning your personal preferences"
+fi
 echo ""

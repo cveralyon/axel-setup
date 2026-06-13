@@ -61,7 +61,7 @@ AXEL should separate reusable workflow intent from runtime-specific wiring.
 - `--target claude` must remain backward-compatible with existing installs.
 - Runtime adapters must not share hidden side effects. If a component cannot be mapped cleanly to a target, mark it unsupported in the manifest and print a skip reason.
 - Model routing must remain explicit: target adapters can translate policy wording, but must not silently inherit the most expensive session model.
-- Personal defaults stay opt-in through profiles; team-safe and minimal targets must be suitable for public OSS users.
+- Personal defaults stay behind explicit profiles; core, team-safe, and minimal targets must be suitable for public OSS users.
 
 ## Acceptance Criteria
 

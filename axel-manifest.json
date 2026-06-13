@@ -23,6 +23,10 @@
     }
   },
   "profiles": {
+    "core": {
+      "description": "Public safe default setup with conservative permissions and optional local side effects disabled.",
+      "safePermissions": true
+    },
     "personal": {
       "description": "Full personal setup with permissive local automation.",
       "safePermissions": false
@@ -48,69 +52,69 @@
     {
       "path": "settings.json",
       "targets": ["claude"],
-      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+      "profiles": ["core", "personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "hooks/enforce-agent-model.jq",
       "targets": ["claude"],
-      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+      "profiles": ["core", "personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "hooks/validate-commit-format.sh",
       "targets": ["claude"],
-      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+      "profiles": ["core", "personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "commands/daily.md",
       "targets": ["claude", "codex", "generic"],
-      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+      "profiles": ["core", "personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "agents/excelsior-verifier.md",
       "targets": ["claude", "codex", "generic"],
-      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+      "profiles": ["core", "personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "skills/model-routing/SKILL.md",
       "targets": ["claude", "codex", "generic"],
-      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+      "profiles": ["core", "personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "skills/ui-ux-pro-max/SKILL.md",
       "targets": ["claude", "codex", "generic"],
-      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+      "profiles": ["core", "personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "skills/ui-ux-pro-max/data/colors.csv",
       "targets": ["claude", "codex", "generic"],
-      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+      "profiles": ["core", "personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "skills/ui-ux-pro-max/scripts/search.py",
       "targets": ["claude", "codex", "generic"],
-      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+      "profiles": ["core", "personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "AGENTS.md",
       "targets": ["codex", "generic"],
-      "profiles": ["personal", "team-safe", "minimal", "ci", "full"]
+      "profiles": ["core", "personal", "team-safe", "minimal", "ci", "full"]
     },
     {
       "path": "scripts/posthog-snapshot-loader.sh",
       "targets": ["claude", "codex", "generic"],
-      "profiles": ["personal", "team-safe", "full"],
+      "profiles": ["core", "personal", "team-safe", "full"],
       "optionalFlag": "enable-posthog"
     },
     {
       "path": "tools/session-server.js",
       "targets": ["claude"],
-      "profiles": ["personal", "team-safe", "full"],
+      "profiles": ["core", "personal", "team-safe", "full"],
       "skipFlag": "skip-monitor"
     },
     {
       "path": "keybindings.json",
       "targets": ["claude"],
-      "profiles": ["personal", "team-safe", "full"],
+      "profiles": ["core", "personal", "team-safe", "full"],
       "skipFlag": "skip-keybindings"
     }
   ],

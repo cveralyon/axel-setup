@@ -11,6 +11,10 @@ Releases are grouped by date and logical scope. npm package releases use semver 
 
 ### Added
 - `axel-setup review-upgrades` for target-aware inspection of generated upgrade proposals before manual apply.
+- `core` install profile as the public safe default for reusable Claude Code setup.
+
+### Changed
+- Default installs now use `--profile core`, keeping `personal` and `full` as explicit choices for fuller local automation.
 
 ### Fixed
 - Re-running the bootstrap with only `MEMORY.md` in the memory directory no longer exits early.

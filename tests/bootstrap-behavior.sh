@@ -26,7 +26,12 @@ case "${1:-}" in
     ;;
 esac
 STUB
-  chmod +x "$bin_dir/claude"
+  cat >"$bin_dir/npx" <<'STUB'
+#!/usr/bin/env bash
+echo "npx should not run for the default safe profile" >&2
+exit 42
+STUB
+  chmod +x "$bin_dir/claude" "$bin_dir/npx"
 }
 
 run_bootstrap() {
@@ -59,6 +64,21 @@ dry_home="$TMP_ROOT/dry-home"
 mkdir -p "$dry_home"
 run_bootstrap "$dry_home" "$stub_bin" --dry-run --user-name "CI Bot"
 assert_no_path "$dry_home/.claude"
+
+default_home="$TMP_ROOT/default-home"
+mkdir -p "$default_home"
+run_bootstrap "$default_home" "$stub_bin" \
+  --user-name "CI Bot" \
+  --user-context "CI smoke test" \
+  --language english
+
+assert_file "$default_home/.claude/axel-manifest.json"
+jq -e '.profile == "core"' "$default_home/.claude/axel-manifest.json" >/dev/null
+jq -e '.permissions.defaultMode != "bypassPermissions"' "$default_home/.claude/settings.json" >/dev/null
+jq -e '(.permissions.allow // []) | index("Bash(*)") | not' "$default_home/.claude/settings.json" >/dev/null
+assert_no_path "$default_home/.claude/tools/session-server.js"
+assert_no_path "$default_home/.claude/keybindings.json"
+assert_no_path "$default_home/.claude/get-shit-done"
 
 install_home="$TMP_ROOT/install-home"
 mkdir -p "$install_home"
