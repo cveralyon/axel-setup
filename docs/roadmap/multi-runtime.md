@@ -44,7 +44,7 @@ AXEL should separate reusable workflow intent from runtime-specific wiring.
 4. `codex` installs portable AXEL instructions, skills, agents, commands, scripts, and a manifest into `$CODEX_HOME` or `~/.codex`.
 5. `generic` exports the same portable bundle into `--output <dir>` without touching home-directory agent config.
 6. CI smoke tests cover dry-run behavior, Codex temp installs, generic output installs, target-aware doctor checks, and Claude backward compatibility.
-7. `axel-setup diff` and `axel-setup uninstall` audit and remove exact package matches per target while keeping modified and merge-managed files.
+7. `axel-setup diff`, `review-upgrades`, and `uninstall` audit, review, and remove exact package matches per target while keeping modified and merge-managed files.
 
 ### Remaining Native Adapter Work
 
@@ -68,6 +68,6 @@ AXEL should separate reusable workflow intent from runtime-specific wiring.
 - `npx axel-setup --target claude --dry-run` produces the same class of output as today's default install.
 - `npx axel-setup --target codex --dry-run` prints all planned Codex writes without creating files.
 - `npx axel-setup --target generic --output <dir>` exports a reviewable bundle and does not touch home-directory agent config.
-- `npx axel-setup diff --target <target>` audits installed package files, and `uninstall --apply` removes only exact package matches.
+- `npx axel-setup diff --target <target>` audits installed package files, `review-upgrades` prints generated upgrade proposals, and `uninstall --apply` removes only exact package matches.
 - `npm run check` covers target parsing, manifest validation, doctor behavior, and temp-home smoke installs for every supported target.
 - README documents Claude Code as the default and links each non-default target as experimental until native runtime wiring is complete.

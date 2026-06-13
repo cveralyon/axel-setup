@@ -112,6 +112,7 @@ The setup hardening release makes the published CLI easier to operate in CI, cor
 - `npx axel-setup doctor --target claude --home ~` to verify that an installation matches the shipped manifest and report missing files.
 - `npx axel-setup doctor --target codex --codex-home ~/.codex` and `npx axel-setup doctor --target generic --output ./axel-runtime` for non-Claude installs.
 - `npx axel-setup diff --target <target>` to audit installed files against the package.
+- `npx axel-setup review-upgrades --target <target>` to inspect generated upgrade proposals before applying anything manually.
 - `npx axel-setup uninstall --target <target>` to preview removals, then add `--apply` to remove only exact package matches.
 
 Advanced: pass extra context so the Stop hooks personalize their prompts:
@@ -308,13 +309,20 @@ When a file already exists but the AXEL version is different (potentially better
 2. Generates a `MANIFEST.md` listing all files with available upgrades
 3. Creates a `REVIEW.md` prompt that your Claude Code agent can follow
 
-**To review upgrades**, paste this into Claude Code after running the bootstrap:
+**To review upgrades**, run:
 
-```
-Read the file ~/.claude/axel-upgrades/REVIEW.md and follow its instructions
+```bash
+npx axel-setup review-upgrades --target claude --home ~
 ```
 
-Your agent will compare each file side-by-side, explain what's better in each version, and let you decide: **keep current**, **use AXEL version**, or **merge the best of both**. Nothing changes without your explicit approval.
+For portable runtime exports, use the matching target:
+
+```bash
+npx axel-setup review-upgrades --target codex --codex-home ~/.codex
+npx axel-setup review-upgrades --target generic --output ./axel-runtime
+```
+
+Your agent can then compare each file side-by-side, explain what's better in each version, and let you decide: **keep current**, **use AXEL version**, or **merge the best of both**. Nothing changes without your explicit approval.
 
 ### For installed files: Diff and uninstall
 
