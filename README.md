@@ -111,6 +111,8 @@ The setup hardening release makes the published CLI easier to operate in CI, cor
 - `--target claude|codex|generic` so Claude Code stays the default while Codex and generic runtimes can receive portable AXEL assets.
 - `npx axel-setup doctor --target claude --home ~` to verify that an installation matches the shipped manifest and report missing files.
 - `npx axel-setup doctor --target codex --codex-home ~/.codex` and `npx axel-setup doctor --target generic --output ./axel-runtime` for non-Claude installs.
+- `npx axel-setup diff --target <target>` to audit installed files against the package.
+- `npx axel-setup uninstall --target <target>` to preview removals, then add `--apply` to remove only exact package matches.
 
 Advanced: pass extra context so the Stop hooks personalize their prompts:
 
@@ -313,6 +315,30 @@ Read the file ~/.claude/axel-upgrades/REVIEW.md and follow its instructions
 ```
 
 Your agent will compare each file side-by-side, explain what's better in each version, and let you decide: **keep current**, **use AXEL version**, or **merge the best of both**. Nothing changes without your explicit approval.
+
+### For installed files: Diff and uninstall
+
+The CLI can audit and remove AXEL-managed files for each runtime target:
+
+```bash
+npx axel-setup diff --target claude --home ~
+npx axel-setup diff --target codex --codex-home ~/.codex
+npx axel-setup diff --target generic --output ./axel-runtime
+```
+
+Uninstall is dry-run by default:
+
+```bash
+npx axel-setup uninstall --target generic --output ./axel-runtime
+```
+
+To remove files, pass `--apply`:
+
+```bash
+npx axel-setup uninstall --target generic --output ./axel-runtime --apply
+```
+
+Safety rule: uninstall only removes files that still exactly match the AXEL package. Modified files are kept for manual review. Merge-managed files like `settings.json` are never removed automatically.
 
 ### For settings.json: Deep Merge
 

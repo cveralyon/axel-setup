@@ -9,6 +9,22 @@ cleanup() {
 }
 trap cleanup EXIT
 
+assert_file() {
+  local path="$1"
+  if [ ! -f "$path" ]; then
+    echo "Expected file to exist: $path" >&2
+    exit 1
+  fi
+}
+
+assert_no_path() {
+  local path="$1"
+  if [ -e "$path" ]; then
+    echo "Expected path to be absent: $path" >&2
+    exit 1
+  fi
+}
+
 stub_bin="$TMP_ROOT/bin"
 mkdir -p "$stub_bin"
 cat >"$stub_bin/claude" <<'STUB'
@@ -40,6 +56,16 @@ PATH="$stub_bin:$PATH" HOME="$install_home" node "$ROOT/bin/axel-setup.js" \
 doctor_output="$(node "$ROOT/bin/axel-setup.js" doctor --home "$install_home")"
 printf '%s\n' "$doctor_output" | grep -q "AXEL Doctor"
 printf '%s\n' "$doctor_output" | grep -q "PASS"
+
+diff_output="$(node "$ROOT/bin/axel-setup.js" diff --home "$install_home")"
+printf '%s\n' "$diff_output" | grep -q "AXEL Diff"
+printf '%s\n' "$diff_output" | grep -q "MATCH commands/daily.md"
+printf '%s\n' "$diff_output" | grep -q "PRESENT settings.json (merge-managed)"
+
+uninstall_dry_run_output="$(node "$ROOT/bin/axel-setup.js" uninstall --home "$install_home")"
+printf '%s\n' "$uninstall_dry_run_output" | grep -q "Mode: dry-run"
+printf '%s\n' "$uninstall_dry_run_output" | grep -q "WOULD REMOVE commands/daily.md"
+assert_file "$install_home/.claude/commands/daily.md"
 
 rm "$install_home/.claude/hooks/enforce-agent-model.jq"
 
@@ -99,3 +125,19 @@ if [ -e "$generic_home/.claude" ]; then
   echo "Generic target should not write Claude config" >&2
   exit 1
 fi
+
+generic_diff_output="$(node "$ROOT/bin/axel-setup.js" diff --target generic --output "$generic_output")"
+printf '%s\n' "$generic_diff_output" | grep -q "MATCH AGENTS.md"
+printf '%s\n' "$generic_diff_output" | grep -q "PRESENT axel-manifest.json (manifest)"
+
+generic_uninstall_dry_run="$(node "$ROOT/bin/axel-setup.js" uninstall --target generic --output "$generic_output")"
+printf '%s\n' "$generic_uninstall_dry_run" | grep -q "Mode: dry-run"
+printf '%s\n' "$generic_uninstall_dry_run" | grep -q "WOULD REMOVE AGENTS.md"
+assert_file "$generic_output/AGENTS.md"
+
+generic_uninstall_apply="$(node "$ROOT/bin/axel-setup.js" uninstall --target generic --output "$generic_output" --apply)"
+printf '%s\n' "$generic_uninstall_apply" | grep -q "Mode: apply"
+printf '%s\n' "$generic_uninstall_apply" | grep -q "REMOVE AGENTS.md"
+assert_no_path "$generic_output/AGENTS.md"
+assert_no_path "$generic_output/commands/daily.md"
+assert_no_path "$generic_output/axel-manifest.json"
