@@ -54,6 +54,18 @@ npx axel-setup --dry-run --user-name "Your Name"
 
 By default AXEL uses `--profile core`, a public safe Claude Code install that keeps conservative permissions and skips optional side effects such as plugin installation, usage monitor launchd setup, keybindings, and the external GSD installer. Use `--profile personal` or `--profile full` when you explicitly want the fuller local automation setup.
 
+For a macOS one-line installer, use the curl wrapper. It checks for Claude Code, jq, zsh, and Node before delegating to the packaged npm release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cveralyon/axel-setup/main/install.sh | bash -s -- --dry-run --user-name "Your Name"
+```
+
+Before the first npm publish, use the same wrapper against the GitHub package source:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cveralyon/axel-setup/main/install.sh | AXEL_SETUP_PACKAGE=github:cveralyon/axel-setup bash -s -- --dry-run --user-name "Your Name"
+```
+
 Use the GitHub-hosted entrypoint when you want the repo tip before a registry release:
 
 ```bash
