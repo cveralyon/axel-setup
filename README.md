@@ -91,7 +91,7 @@ npm publish /Users/cveralyon/axel-onboarding --access public
 The repository includes a tag-driven npm release workflow in [`.github/workflows/release.yml`](.github/workflows/release.yml). It is designed for GitHub Actions npm publishing with provenance.
 
 Before the first automated release:
-- Configure an npm automation token as the `NPM_TOKEN` repository secret.
+- Prefer npm Trusted Publishing for `cveralyon/axel-setup` and workflow file `release.yml`. npm requires the package to exist before `npm trust` can configure that relationship, so the first publish may still need an npm automation token as the `NPM_TOKEN` repository secret.
 - Make sure the package version in `package.json` and the changelog entry are ready.
 - Verify the package locally with `npm run check` and `npm run publish:dry-run`.
 
@@ -102,7 +102,21 @@ git tag v0.2.1
 git push origin v0.2.1
 ```
 
-The workflow installs `shellcheck` and `shfmt`, runs `npm run check`, then publishes with `npm publish --provenance --access public` when the version is not already on npm. It also rejects tags that do not match `package.json` version.
+The workflow installs `shellcheck`, `shfmt`, and npm 11, runs `npm run check`, then publishes only when the tagged version is not already on npm. With Trusted Publishing configured, GitHub Actions OIDC publishes without a long-lived token and npm generates provenance automatically. If `NPM_TOKEN` is present, the workflow uses it as a fallback with `npm publish --provenance --access public`. It rejects tags that do not match `package.json` version.
+
+After a release, verify:
+
+```bash
+npm view axel-setup version
+npm view axel-setup dist-tags --json
+npm view axel-setup time --json
+```
+
+Rollback for a bad release is intentionally conservative: publish a fixed patch version. If users should stop receiving the bad version before the fix is ready, move the `latest` dist-tag back to the previous stable version:
+
+```bash
+npm dist-tag add axel-setup@0.2.0 latest
+```
 
 ### Setup Hardening CLI Surface
 

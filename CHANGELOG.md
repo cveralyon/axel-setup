@@ -12,9 +12,11 @@ Releases are grouped by date and logical scope. npm package releases use semver 
 ### Added
 - `axel-setup review-upgrades` for target-aware inspection of generated upgrade proposals before manual apply.
 - `core` install profile as the public safe default for reusable Claude Code setup.
+- Release automation now supports npm Trusted Publishing via GitHub Actions OIDC, with an `NPM_TOKEN` provenance fallback for first publish or migration windows.
 
 ### Changed
 - Default installs now use `--profile core`, keeping `personal` and `full` as explicit choices for fuller local automation.
+- Maintainer release notes now document npm verification commands and conservative rollback through fixed patch releases or `latest` dist-tag movement.
 
 ### Fixed
 - Re-running the bootstrap with only `MEMORY.md` in the memory directory no longer exits early.
