@@ -22,6 +22,7 @@ Releases are grouped by date and logical scope. npm package releases use semver 
 - Public multi-runtime roadmap for keeping Claude Code as the default install target while planning Codex and generic adapters.
 - Experimental `--target codex` and `--target generic --output <dir>` adapters that install portable AXEL assets without Claude-only hooks, plugins, settings, launchd, or GSD side effects.
 - Target-aware `axel-setup doctor --target claude|codex|generic` validation.
+- Manifest-aware `axel-setup diff` and dry-run-first `axel-setup uninstall`, with `--apply` removing only exact package matches.
 - GitHub Actions release workflow for `v*` tags that verifies the tag matches `package.json`, re-runs repository validation, skips already-published versions, and publishes `axel-setup` to npm with provenance when `NPM_TOKEN` is configured.
 
 ### Changed
