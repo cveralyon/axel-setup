@@ -52,6 +52,9 @@ bash tests/bootstrap-behavior.sh
 echo "Running one-line installer tests"
 bash tests/install-one-line.sh
 
+echo "Running hook harness tests"
+bash tests/hook-harness.sh
+
 echo "Running CLI doctor tests"
 bash tests/cli-doctor.sh
 
