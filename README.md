@@ -30,6 +30,20 @@ The project packages operational patterns that many engineering teams need when 
 
 The goal is not to hide local preferences inside one private setup. The goal is to convert practical agentic engineering workflows into reusable tooling that other developers can install, inspect, adapt, and contribute back to.
 
+### Runtime Direction
+
+AXEL is Claude Code-first by default. That stays true for the public package because the current installer targets Claude Code hooks, commands, agents, skills, plugins, and `~/.claude` conventions.
+
+The roadmap is to support Codex and other agent runtimes through explicit install targets, not by weakening the Claude Code path. The planned interface is:
+
+```bash
+npx axel-setup --target claude   # default
+npx axel-setup --target codex    # planned adapter
+npx axel-setup --target generic  # planned export-only bundle
+```
+
+See [AXEL Multi-Runtime Roadmap](docs/roadmap/multi-runtime.md) for the adapter plan, compatibility rules, and acceptance criteria.
+
 ## Quick Start
 
 The npm registry install is the primary path:
@@ -95,6 +109,7 @@ The setup hardening release makes the published CLI easier to operate in CI, cor
 - `--profile minimal` for lean installs with a smaller default footprint.
 - `--skip-plugins`, `--skip-gsd`, and `--no-launchd` so maintainers and CI can suppress optional side effects.
 - `npx axel-setup doctor --home ~/.claude` to verify that an installation matches the shipped manifest and report missing files.
+- Claude Code remains the default runtime target; Codex and generic runtimes are tracked in the public [multi-runtime roadmap](docs/roadmap/multi-runtime.md).
 
 Advanced: pass extra context so the Stop hooks personalize their prompts:
 

@@ -19,6 +19,7 @@ Releases are grouped by date and logical scope. npm package releases use semver 
 - Machine-readable `axel-manifest.json` installed into `~/.claude/axel-manifest.json`.
 - `axel-setup doctor [--home PATH]` to verify installed files against the manifest.
 - Integration tests for dry-run behavior, real temp-home installation, recursive skill assets, CLI doctor, and `merge-settings.jq` fixtures.
+- Public multi-runtime roadmap for keeping Claude Code as the default install target while planning Codex and generic adapters.
 - GitHub Actions release workflow for `v*` tags that verifies the tag matches `package.json`, re-runs repository validation, skips already-published versions, and publishes `axel-setup` to npm with provenance when `NPM_TOKEN` is configured.
 
 ### Changed
