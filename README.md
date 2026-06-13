@@ -52,6 +52,8 @@ The npm registry install is the primary path:
 npx axel-setup --dry-run --user-name "Your Name"
 ```
 
+By default AXEL uses `--profile core`, a public safe Claude Code install that keeps conservative permissions and skips optional side effects such as plugin installation, usage monitor launchd setup, keybindings, and the external GSD installer. Use `--profile personal` or `--profile full` when you explicitly want the fuller local automation setup.
+
 Use the GitHub-hosted entrypoint when you want the repo tip before a registry release:
 
 ```bash
@@ -106,6 +108,8 @@ The workflow installs `shellcheck` and `shfmt`, runs `npm run check`, then publi
 
 The setup hardening release makes the published CLI easier to operate in CI, corporate environments, and third-party installs:
 
+- `--profile core` is the default public safe profile for reusable Claude Code setup.
+- `--profile personal` and `--profile full` opt into the fuller local automation footprint.
 - `--profile minimal` for lean installs with a smaller default footprint.
 - `--skip-plugins`, `--skip-gsd`, and `--no-launchd` so maintainers and CI can suppress optional side effects.
 - `--target claude|codex|generic` so Claude Code stays the default while Codex and generic runtimes can receive portable AXEL assets.
