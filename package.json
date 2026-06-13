@@ -1,7 +1,7 @@
 {
   "name": "axel-setup",
   "version": "0.2.0",
-  "description": "Claude Code team configuration package with hooks, agents, commands, skills, plugins, and repeatable bootstrap tooling.",
+  "description": "Claude Code-first team configuration package with hooks, agents, commands, skills, plugins, and repeatable bootstrap tooling.",
   "license": "MIT",
   "author": {
     "name": "Cristian Vera Lyon",
@@ -15,6 +15,8 @@
     "devex",
     "mcp",
     "agentic-engineering",
+    "codex",
+    "multi-runtime",
     "bootstrap"
   ],
   "repository": {
@@ -36,6 +38,7 @@
     "skills",
     "templates",
     "tools",
+    "docs",
     "bin",
     "bootstrap.sh",
     "axel-manifest.json",
