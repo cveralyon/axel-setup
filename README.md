@@ -143,6 +143,7 @@ The setup hardening release makes the published CLI easier to operate in CI, cor
 - `npx axel-setup doctor --target codex --codex-home ~/.codex` and `npx axel-setup doctor --target generic --output ./axel-runtime` for non-Claude installs.
 - `npx axel-setup diff --target <target>` to audit installed files against the package.
 - `npx axel-setup review-upgrades --target <target>` to inspect generated upgrade proposals before applying anything manually.
+- `npx axel-setup metrics [--json]` to summarize context-budget, usage-monitor, and hook-harness impact signals without reading private local session data.
 - `npx axel-setup uninstall --target <target>` to preview removals, then add `--apply` to remove only exact package matches.
 
 Advanced: pass extra context so the Stop hooks personalize their prompts:
