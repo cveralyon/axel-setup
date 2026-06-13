@@ -16,11 +16,11 @@ Equivalent explicit target:
 npx axel-setup --target claude
 ```
 
-Future non-default targets:
+Experimental non-default targets:
 
 ```bash
 npx axel-setup --target codex
-npx axel-setup --target generic
+npx axel-setup --target generic --output ./axel-runtime
 ```
 
 ## Target Model
@@ -36,19 +36,27 @@ AXEL should separate reusable workflow intent from runtime-specific wiring.
 
 ## Implementation Plan
 
-1. Add `--target claude|codex|generic` to the CLI and bootstrap, defaulting to `claude`.
-2. Extend `axel-manifest.json` with `targets`, `defaultTarget`, and per-target install roots.
-3. Move runtime-specific file placement into target adapters:
+### Implemented First Slice
+
+1. `--target claude|codex|generic` is supported by the CLI and bootstrap, defaulting to `claude`.
+2. `axel-manifest.json` declares `targets`, `defaultTarget`, and target-scoped required paths.
+3. `axel-setup doctor --target <target>` validates the selected runtime root.
+4. `codex` installs portable AXEL instructions, skills, agents, commands, scripts, and a manifest into `$CODEX_HOME` or `~/.codex`.
+5. `generic` exports the same portable bundle into `--output <dir>` without touching home-directory agent config.
+6. CI smoke tests cover dry-run behavior, Codex temp installs, generic output installs, target-aware doctor checks, and Claude backward compatibility.
+
+### Remaining Native Adapter Work
+
+1. Move more runtime-specific file placement behind dedicated adapter modules when the shell script grows beyond the current small target split:
    - `claude`: current behavior, preserved as default.
-   - `codex`: install AGENTS-compatible instructions, local skills, and optional scripts without assuming Claude hooks.
-   - `generic`: export markdown prompts, agent role docs, and shell utilities without modifying tool config.
-4. Add `axel-setup doctor --target <target>` so validation matches the selected runtime.
-5. Keep GSD and third-party ecosystems external: detect and integrate when present, never vendor a frozen copy.
-6. Add fixtures proving each target is additive and does not write outside its declared install root.
+   - `codex`: add native Codex command, skill, and instruction wiring as the runtime surface stabilizes.
+   - `generic`: add optional archive generation and machine-readable component metadata.
+2. Keep GSD and third-party ecosystems external: detect and integrate when present, never vendor a frozen copy.
+3. Add upgrade and uninstall workflows per target using the installed manifest.
 
 ## Compatibility Rules
 
-- `claude` remains the only fully supported target until Codex/generic fixtures are green.
+- `claude` remains the only fully supported target. Codex and generic are experimental portable-asset targets.
 - `--target claude` must remain backward-compatible with existing installs.
 - Runtime adapters must not share hidden side effects. If a component cannot be mapped cleanly to a target, mark it unsupported in the manifest and print a skip reason.
 - Model routing must remain explicit: target adapters can translate policy wording, but must not silently inherit the most expensive session model.
@@ -60,4 +68,4 @@ AXEL should separate reusable workflow intent from runtime-specific wiring.
 - `npx axel-setup --target codex --dry-run` prints all planned Codex writes without creating files.
 - `npx axel-setup --target generic --output <dir>` exports a reviewable bundle and does not touch home-directory agent config.
 - `npm run check` covers target parsing, manifest validation, doctor behavior, and temp-home smoke installs for every supported target.
-- README documents Claude Code as the default and links each non-default target as experimental until verified.
+- README documents Claude Code as the default and links each non-default target as experimental until native runtime wiring is complete.

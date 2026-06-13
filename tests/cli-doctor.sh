@@ -54,3 +54,48 @@ if [ "$missing_status" -eq 0 ]; then
 fi
 
 printf '%s\n' "$missing_output" | grep -q "MISSING"
+
+codex_home="$TMP_ROOT/codex-home"
+codex_root="$TMP_ROOT/codex-root"
+mkdir -p "$codex_home"
+
+PATH="$stub_bin:$PATH" HOME="$codex_home" CODEX_HOME="$codex_root" node "$ROOT/bin/axel-setup.js" \
+  --target codex \
+  --user-name "CI Bot" \
+  --profile minimal >/dev/null
+
+codex_doctor_output="$(node "$ROOT/bin/axel-setup.js" doctor --target codex --codex-home "$codex_root")"
+printf '%s\n' "$codex_doctor_output" | grep -q "Target: codex"
+printf '%s\n' "$codex_doctor_output" | grep -q "PASS AGENTS.md"
+
+rm "$codex_root/AGENTS.md"
+
+set +e
+codex_missing_output="$(node "$ROOT/bin/axel-setup.js" doctor --target codex --codex-home "$codex_root" 2>&1)"
+codex_missing_status=$?
+set -e
+
+if [ "$codex_missing_status" -eq 0 ]; then
+  echo "Codex doctor should fail when a manifest file is missing" >&2
+  exit 1
+fi
+
+printf '%s\n' "$codex_missing_output" | grep -q "MISSING AGENTS.md"
+
+generic_home="$TMP_ROOT/generic-home"
+generic_output="$TMP_ROOT/generic-output"
+mkdir -p "$generic_home"
+
+PATH="$stub_bin:$PATH" HOME="$generic_home" node "$ROOT/bin/axel-setup.js" \
+  --target generic \
+  --output "$generic_output" \
+  --user-name "CI Bot" \
+  --profile minimal >/dev/null
+
+generic_doctor_output="$(node "$ROOT/bin/axel-setup.js" doctor --target generic --output "$generic_output")"
+printf '%s\n' "$generic_doctor_output" | grep -q "Target: generic"
+printf '%s\n' "$generic_doctor_output" | grep -q "PASS AGENTS.md"
+if [ -e "$generic_home/.claude" ]; then
+  echo "Generic target should not write Claude config" >&2
+  exit 1
+fi
