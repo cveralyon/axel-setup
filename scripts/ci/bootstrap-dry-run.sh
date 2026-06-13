@@ -10,7 +10,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cat > "$TMP_BIN/claude" <<'STUB'
+cat >"$TMP_BIN/claude" <<'STUB'
 #!/usr/bin/env bash
 case "${1:-}" in
   --version)
@@ -27,13 +27,14 @@ STUB
 chmod +x "$TMP_BIN/claude"
 
 PATH="$TMP_BIN:$PATH" \
-HOME="$TMP_HOME" \
-bash "$ROOT/bootstrap.sh" \
+  HOME="$TMP_HOME" \
+  bash "$ROOT/bootstrap.sh" \
   --dry-run \
   --user-name "CI Bot" \
   --user-context "CI smoke test" \
   --language english
 
-test -d "$TMP_HOME/.claude/hooks"
-test -d "$TMP_HOME/.claude/commands"
-test -d "$TMP_HOME/.claude/agents"
+if [ -e "$TMP_HOME/.claude" ]; then
+  echo "Dry run created $TMP_HOME/.claude" >&2
+  exit 1
+fi
