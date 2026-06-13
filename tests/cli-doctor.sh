@@ -102,6 +102,29 @@ codex_home="$TMP_ROOT/codex-home"
 codex_root="$TMP_ROOT/codex-root"
 mkdir -p "$codex_home"
 
+codex_dry_home="$TMP_ROOT/codex-dry-home"
+codex_dry_root="$TMP_ROOT/codex-dry-root"
+mkdir -p "$codex_dry_home"
+
+codex_dry_run_output="$(PATH="$stub_bin:$PATH" HOME="$codex_dry_home" CODEX_HOME="$codex_dry_root" node "$ROOT/bin/axel-setup.js" \
+  --target codex \
+  --dry-run \
+  --user-name "CI Bot" \
+  --profile minimal \
+  --skip-plugins \
+  --skip-gsd \
+  --no-launchd)"
+printf '%s\n' "$codex_dry_run_output" | grep -q "Install target: codex"
+printf '%s\n' "$codex_dry_run_output" | grep -q "\[DRY RUN\] Would add: AGENTS.md"
+if [ -e "$codex_dry_root" ]; then
+  echo "Codex dry-run should not create CODEX_HOME" >&2
+  exit 1
+fi
+if [ -e "$codex_dry_home/.claude" ]; then
+  echo "Codex dry-run should not write Claude config" >&2
+  exit 1
+fi
+
 PATH="$stub_bin:$PATH" HOME="$codex_home" CODEX_HOME="$codex_root" node "$ROOT/bin/axel-setup.js" \
   --target codex \
   --user-name "CI Bot" \
