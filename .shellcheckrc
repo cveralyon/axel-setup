@@ -1,0 +1,4 @@
+# ShellCheck configuration for axel-setup.
+# The project intentionally relies on ShellCheck defaults (severity error in CI).
+# Add `disable=SCxxxx` lines here only for project-wide, justified exclusions,
+# preferring inline `# shellcheck disable=SCxxxx` comments at the specific call site.
