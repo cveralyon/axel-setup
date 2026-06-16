@@ -7,7 +7,6 @@
   },
   "permissions": {
     "allow": [
-      "Bash(*)",
       "Read(*)",
       "Edit(*)",
       "Write(*)",
@@ -20,7 +19,7 @@
       "Bash(rm -rf *)",
       "Bash(dd *)"
     ],
-    "defaultMode": "bypassPermissions"
+    "defaultMode": "acceptEdits"
   },
   "hooks": {
     "PreToolUse": [
@@ -29,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"$TOOL_INPUT\" | grep -qE '\\-\\-no-verify' && echo 'BLOCKED: --no-verify is prohibited' >&2 && exit 2 || exit 0"
+            "command": "CMD=$(jq -r '.tool_input.command // empty'); printf '%s' \"$CMD\" | grep -qE '\\-\\-no-verify' && echo 'BLOCKED: --no-verify is prohibited' >&2 && exit 2 || exit 0"
           }
         ]
       },
@@ -47,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"$TOOL_INPUT\" | grep -qE 'RAILS_ENV=staging' && echo 'WARNING: staging = PRODUCTION. Confirm with the user.' >&2 && exit 1 || exit 0"
+            "command": "CMD=$(jq -r '.tool_input.command // empty'); printf '%s' \"$CMD\" | grep -qE 'RAILS_ENV=staging' && echo 'BLOCKED: staging = PRODUCTION. Confirm with the user before running.' >&2 && exit 2 || exit 0"
           }
         ]
       },
@@ -251,5 +250,5 @@
   "autoMemoryDirectory": "~/.claude/memory",
   "autoDreamEnabled": true,
   "showThinkingSummaries": true,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": false
 }

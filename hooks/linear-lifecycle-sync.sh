@@ -27,35 +27,41 @@ case "$TICKET_PATTERN" in "{{"*"}}"|"") TICKET_PATTERN="[A-Z]+-[0-9]+" ;; esac
 LINEAR_TEAM="{{LINEAR_TEAM}}"
 case "$LINEAR_TEAM" in "{{"*"}}"|"") LINEAR_TEAM="your team" ;; esac
 
+# Name of the Linear state for "PR opened, awaiting review". Some teams call it
+# "In Review", others "PR In Review". Bootstrap substitutes the placeholder; the
+# case fallback keeps the script working when run without bootstrap.
+PR_REVIEW_STATE="{{PR_REVIEW_STATE}}"
+case "$PR_REVIEW_STATE" in "{{"*"}}"|"") PR_REVIEW_STATE="In Review" ;; esac
+
 # Guard against recursive invocation (this script spawns claude -p)
 if [ -n "$CLAUDE_LINEAR_SYNC" ]; then exit 0; fi
 
 INPUT=$(cat)
-COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
-CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)
+COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
+CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null)
 
 # Only run in configured repos (skip if filter is empty — runs everywhere)
-if [ -n "$REPO_PATH_FILTER" ] && ! echo "$CWD" | grep -qE "$REPO_PATH_FILTER"; then exit 0; fi
+if [ -n "$REPO_PATH_FILTER" ] && ! printf '%s' "$CWD" | grep -qE "$REPO_PATH_FILTER"; then exit 0; fi
 
 # --- Detect action type ---
 ACTION=""
 TICKETS=""
 
-if echo "$COMMAND" | grep -qE '(^|[[:space:]&;|(])git[[:space:]]+commit([[:space:]]|$)'; then
+if printf '%s' "$COMMAND" | grep -qE '(^|[[:space:]&;|(])git[[:space:]]+commit([[:space:]]|$)'; then
   ACTION="in_progress"
-  TICKETS=$(echo "$COMMAND" | grep -oE "$TICKET_PATTERN" | sort -u | tr '\n' ' ' | sed 's/ $//')
+  TICKETS=$(printf '%s' "$COMMAND" | grep -oE "$TICKET_PATTERN" | sort -u | tr '\n' ' ' | sed 's/ $//')
 
-elif echo "$COMMAND" | grep -qE '(^|[[:space:]&;|(])gh[[:space:]]+pr[[:space:]]+create'; then
+elif printf '%s' "$COMMAND" | grep -qE '(^|[[:space:]&;|(])gh[[:space:]]+pr[[:space:]]+create'; then
   ACTION="in_review"
-  TICKETS=$(echo "$COMMAND" | grep -oE "$TICKET_PATTERN" | sort -u | tr '\n' ' ' | sed 's/ $//')
+  TICKETS=$(printf '%s' "$COMMAND" | grep -oE "$TICKET_PATTERN" | sort -u | tr '\n' ' ' | sed 's/ $//')
   if [ -z "$TICKETS" ]; then
     TICKETS=$(git -C "$CWD" log --not --remotes --pretty=format:"%s %b" 2>/dev/null \
       | grep -oE "$TICKET_PATTERN" | sort -u | tr '\n' ' ' | sed 's/ $//')
   fi
 
-elif echo "$COMMAND" | grep -qE '(^|[[:space:]&;|(])gh[[:space:]]+pr[[:space:]]+merge'; then
+elif printf '%s' "$COMMAND" | grep -qE '(^|[[:space:]&;|(])gh[[:space:]]+pr[[:space:]]+merge'; then
   ACTION="done"
-  TICKETS=$(echo "$COMMAND" | grep -oE "$TICKET_PATTERN" | sort -u | tr '\n' ' ' | sed 's/ $//')
+  TICKETS=$(printf '%s' "$COMMAND" | grep -oE "$TICKET_PATTERN" | sort -u | tr '\n' ' ' | sed 's/ $//')
   if [ -z "$TICKETS" ]; then
     TICKETS=$(git -C "$CWD" log --not --remotes --pretty=format:"%s %b" 2>/dev/null \
       | grep -oE "$TICKET_PATTERN" | sort -u | tr '\n' ' ' | sed 's/ $//')
@@ -77,7 +83,7 @@ touch "$RATE_FILE"
 # --- Determine target state label ---
 case "$ACTION" in
   in_progress) TARGET="In Progress" ;;
-  in_review)   TARGET="In Review" ;;
+  in_review)   TARGET="$PR_REVIEW_STATE" ;;
   done)        TARGET="Done" ;;
   *) exit 0 ;;
 esac
@@ -92,8 +98,8 @@ Instructions:
 1. Call list_issue_statuses to find the state ID for '$TARGET' in the $LINEAR_TEAM team.
 2. For each ticket, call get_issue to check its current state name.
 3. Skip rules:
-   - If target is 'In Progress' and current state is already In Progress, In Review, or Done → skip.
-   - If target is 'In Review' and current state is already In Review or Done → skip.
+   - If target is 'In Progress' and current state is already In Progress, $PR_REVIEW_STATE, or Done → skip.
+   - If target is '$PR_REVIEW_STATE' and current state is already $PR_REVIEW_STATE or Done → skip.
    - If target is 'Done' and current state is already Done → skip.
 4. For tickets that need updating, call save_issue with the new stateId.
 5. Output format (one line per ticket):
@@ -103,7 +109,7 @@ Instructions:
 HOOK_TMP=$(mktemp -d 2>/dev/null)
 REAL_TMP=$(cd "$HOOK_TMP" 2>/dev/null && pwd -P)
 RESULT=$(cd "$HOOK_TMP" 2>/dev/null && printf '%s' "$PROMPT" | CLAUDE_LINEAR_SYNC=1 claude -p --model haiku 2>/dev/null)
-GHOST_SLUG=$(echo "$REAL_TMP" | sed 's|[^a-zA-Z0-9]|-|g')
+GHOST_SLUG=$(printf '%s' "$REAL_TMP" | sed 's|[^a-zA-Z0-9]|-|g')
 rm -rf "$HOOK_TMP" "$HOME/.claude/projects/${GHOST_SLUG}" 2>/dev/null
 
 mkdir -p "$HOME/.claude/logs"

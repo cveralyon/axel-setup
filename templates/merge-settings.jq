@@ -23,11 +23,14 @@
     ($event): (
       ($existing_hooks[$event] // []) as $existing_entries |
       ($axel_hooks[$event] // []) as $axel_entries |
-      ($existing_entries | map(.hooks[0].command // "") | map(select(. != ""))) as $existing_cmds |
+      # Identify each entry by the FULL ordered list of its hook commands, not
+      # just the first one. This keeps dedup correct for multi-command entries
+      # (two entries that share a first command but differ later are distinct).
+      ($existing_entries | map((.hooks // []) | map(.command // ""))) as $existing_cmds |
       ($axel_entries | map(
         select(
-          (.hooks[0].command // "") as $cmd |
-          ($existing_cmds | map(. == $cmd) | any | not)
+          ((.hooks // []) | map(.command // "")) as $cmds |
+          ($existing_cmds | map(. == $cmds) | any | not)
         )
       )) as $new_entries |
       $existing_entries + $new_entries

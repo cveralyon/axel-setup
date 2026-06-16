@@ -13,7 +13,7 @@ if [ -z "$SESSIONS" ]; then
   exit 0
 fi
 
-LATEST=$(echo "$SESSIONS" | head -1)
+LATEST=$(printf '%s' "$SESSIONS" | head -1)
 SESSION_DATE=$(grep "^date:" "$LATEST" 2>/dev/null | cut -d' ' -f2)
 SESSION_TIME=$(grep "^time:" "$LATEST" 2>/dev/null | cut -d' ' -f2)
 
@@ -27,14 +27,19 @@ sed -n '/^---$/,/^---$/!p' "$LATEST" | head -80
 echo ""
 
 # Show previous sessions as one-liners
-OTHERS=$(echo "$SESSIONS" | tail -n +2)
+OTHERS=$(printf '%s' "$SESSIONS" | tail -n +2)
 if [ -n "$OTHERS" ]; then
   echo "### Sesiones anteriores:"
   for f in $OTHERS; do
     DATE=$(grep "^date:" "$f" 2>/dev/null | cut -d' ' -f2)
     TIME=$(grep "^time:" "$f" 2>/dev/null | cut -d' ' -f2)
-    # Extract first user prompt as summary
-    SUMMARY=$(grep -A1 "Usuario" "$f" 2>/dev/null | grep -v "Usuario" | grep -v "^--$" | head -1 | head -c 100)
+    # Language-agnostic summary: take the body after the frontmatter, drop the
+    # leading H1 title and any markdown headings/blank lines, then keep the
+    # first real content line. Works regardless of the summary language.
+    SUMMARY=$(sed -n '/^---$/,/^---$/!p' "$f" 2>/dev/null \
+      | grep -vE '^[[:space:]]*$|^#' \
+      | head -1 \
+      | head -c 100)
     echo "- **$DATE $TIME**: $SUMMARY"
   done
 fi

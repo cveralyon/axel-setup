@@ -12,10 +12,10 @@
 //    as additionalContext, which the agent sees in its conversation
 //
 // Thresholds:
-//   WARNING  (remaining <= 35%): Agent should wrap up current task
-//   CRITICAL (remaining <= 25%): Agent should stop immediately and save state
+//   WARNING  (remaining <= 15%): Agent should wrap up current task
+//   CRITICAL (remaining <=  8%): Agent should stop immediately and save state
 //
-// Debounce: 5 tool uses between warnings to avoid spam
+// Debounce: 10 tool uses between warnings to avoid spam
 // Severity escalation bypasses debounce (WARNING -> CRITICAL fires immediately)
 
 const fs = require('fs');
