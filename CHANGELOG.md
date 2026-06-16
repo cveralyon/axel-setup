@@ -9,21 +9,27 @@ Releases are grouped by date and logical scope. npm package releases use semver 
 
 ## [Unreleased]
 
+<!-- Nothing pending. -->
+
+---
+
+## [0.3.0] 2026-06-13 security and hooks hardening
+
 ### Added
-- `axel-setup review-upgrades` for target-aware inspection of generated upgrade proposals before manual apply.
-- `core` install profile as the public safe default for reusable Claude Code setup.
-- Release automation now supports npm Trusted Publishing via GitHub Actions OIDC, with an `NPM_TOKEN` provenance fallback for first publish or migration windows.
-- `install.sh` curl wrapper for a macOS one-line install path that delegates to the packaged AXEL release.
-- Fixture-driven hook harness covering PreToolUse model routing, PostToolUse action logging, and Stop session persistence without a live Claude session.
-- `axel-setup metrics [--json]` report for context-budget, usage-monitor, and hook-harness impact signals generated from package assets and public fixtures only.
+- `SECURITY.md` with vulnerability scope, reporting channel (GitHub private security advisories), and response commitment.
+- `CODE_OF_CONDUCT.md` adopting Contributor Covenant v2.1.
+- `.github/dependabot.yml` for weekly GitHub Actions dependency updates.
+- `.editorconfig` with consistent LF, UTF-8, final newline, and 2-space indent across shell, JSON, YAML, JS, and Markdown files.
+- `.shellcheckrc` placeholder committing the project to ShellCheck defaults with a comment explaining the policy.
+- README badges (npm version, CI status, license, Node requirement) added just below the H1.
+- README Security section summarising install footprint, permission profile escalation, and vulnerability reporting.
 
 ### Changed
-- Default installs now use `--profile core`, keeping `personal` and `full` as explicit choices for fuller local automation.
-- Maintainer release notes now document npm verification commands and conservative rollback through fixed patch releases or `latest` dist-tag movement.
-
-### Fixed
-- Re-running the bootstrap with only `MEMORY.md` in the memory directory no longer exits early.
-- Portable targets now generate `axel-upgrades/REVIEW.md` and `MANIFEST.md` when local files differ from the package.
+- `install.sh`: default package pinned to `axel-setup@0.3.0` (overridable via `AXEL_SETUP_PACKAGE` env). Prevents unintended upgrades via `@latest` on a curl pipe.
+- `README.md`: `npx axel-setup@0.3.0` is now the primary recommended install path, above the curl wrapper. The curl URL now points to the release tag (`v0.3.0`) instead of `main`.
+- `README.md`: Maintainer Publish Checklist no longer contains a hardcoded personal path; uses `<repo-root>` placeholder.
+- `README.md`: Language/Customization section clarifies that the Spanish default applies only to the generated personal `CLAUDE.md` template, not to the CLI or documentation.
+- `package.json`: version bumped to `0.3.0`.
 
 ---
 
