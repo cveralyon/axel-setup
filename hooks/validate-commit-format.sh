@@ -1,38 +1,40 @@
 #!/bin/bash
-# Validates commit message format: tipo (Modelo/Archivo): Mensaje
-# Reads $TOOL_INPUT as JSON, extracts the command, then validates the commit message
+# PreToolUse hook (Bash): validates commit message format before the command runs.
+# Reads the hook payload as JSON from stdin, extracts .tool_input.command,
+# then validates the commit message.
 # Valid types: feat|fix|chore|refactor|test|docs|style|perf|ci|build|revert
+# Exit codes: 0 = allow, 2 = block (stderr shown to the model).
 
-TOOL_JSON="$TOOL_INPUT"
+INPUT=$(cat)
+CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
-# Extract the command field from the Bash tool JSON input
-CMD=$(echo "$TOOL_JSON" | jq -r '.command // empty' 2>/dev/null)
-[ -z "$CMD" ] && CMD="$TOOL_JSON"
+# Fallback: if stdin was not JSON, treat the whole payload as the command.
+[ -z "$CMD" ] && CMD="$INPUT"
 
 # Only check git commit commands
-echo "$CMD" | grep -qE 'git commit' || exit 0
+printf '%s' "$CMD" | grep -qE 'git commit' || exit 0
 
 # Extract commit message from -m flag
 # Handles: -m "msg", -m 'msg', -m "$(cat <<'EOF'\nmsg\nEOF\n)"
-MSG=$(echo "$CMD" | sed -n 's/.*-m[[:space:]]*["'\'']\{0,1\}\(.*\)/\1/p' | sed 's/["'\'']\{0,1\}[[:space:]]*$//' | head -1)
+MSG=$(printf '%s' "$CMD" | sed -n 's/.*-m[[:space:]]*["'\'']\{0,1\}\(.*\)/\1/p' | sed 's/["'\'']\{0,1\}[[:space:]]*$//' | head -1)
 
 # For heredoc pattern: extract the first content line
-if echo "$MSG" | grep -q '<<'; then
-  MSG=$(echo "$CMD" | tr '\n' '|' | sed 's/.*<<[^|]*|//' | sed 's/|.*//' | sed 's/^[[:space:]]*//')
+if printf '%s' "$MSG" | grep -q '<<'; then
+  MSG=$(printf '%s' "$CMD" | tr '\n' '|' | sed 's/.*<<[^|]*|//' | sed 's/|.*//' | sed 's/^[[:space:]]*//')
 fi
 
 # If we couldn't extract a message, skip validation (might be --amend or interactive)
 [ -z "$MSG" ] && exit 0
 
 # Validate format: tipo (Scope): message
-if ! echo "$MSG" | grep -qE '^(feat|fix|chore|refactor|test|docs|style|perf|ci|build|revert)\s*\('; then
+if ! printf '%s' "$MSG" | grep -qE '^(feat|fix|chore|refactor|test|docs|style|perf|ci|build|revert)\s*\('; then
   echo "BLOCKED: Commit format is incorrect." >&2
   echo "Required: type (Scope): Descriptive message" >&2
   echo "Canonical example: feat (AuthController): add OAuth2 login flow" >&2
   echo "Valid types: feat|fix|chore|refactor|test|docs|style|perf|ci|build|revert" >&2
   echo "Do not use --no-verify to bypass this check. Fix the message instead." >&2
   echo "Got: $MSG" >&2
-  exit 1
+  exit 2
 fi
 
 exit 0

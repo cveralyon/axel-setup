@@ -1,15 +1,9 @@
 #!/bin/zsh
-# PostToolUse hook: Auto-lint/fix files after Edit or Write.
-# Uses HOOK_TOOL_INPUT (JSON stdin) for richer context when available,
-# falls back to TOOL_INPUT_FILE_PATH env var.
+# PostToolUse hook (Edit|Write): auto-lint/fix files after Edit or Write.
+# Reads the hook payload as JSON from stdin and extracts .tool_input.file_path.
 
-# Try to extract file path from JSON stdin first, then env var
-FILE=""
-if [ -n "$TOOL_INPUT_FILE_PATH" ]; then
-  FILE="$TOOL_INPUT_FILE_PATH"
-elif [ -n "$HOOK_TOOL_INPUT" ]; then
-  FILE=$(echo "$HOOK_TOOL_INPUT" | python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('file_path',''))" 2>/dev/null)
-fi
+INPUT=$(cat)
+FILE=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 
 if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
   exit 0

@@ -1,29 +1,32 @@
 #!/bin/bash
-# Log significant tool actions during session for context persistence
-# Captures: file edits, bash commands, agent launches — the "what was done"
+# PostToolUse hook: log significant tool actions during the session for context
+# persistence. Captures file edits, bash commands, and agent launches — the
+# "what was done". Reads the hook payload as JSON from stdin.
+
+INPUT=$(cat)
 
 PROJECT_NAME=$(basename "$(pwd)")
 SESSION_LOG="/tmp/claude-session-log-${PROJECT_NAME}.md"
 TIMESTAMP=$(date +%H:%M)
 
-TOOL_NAME_VAR="${TOOL_NAME:-unknown}"
+TOOL_NAME_VAR=$(printf '%s' "$INPUT" | jq -r '.tool_name // "unknown"' 2>/dev/null)
 
 # Parse tool input for meaningful context
 case "$TOOL_NAME_VAR" in
   Edit|Write)
-    FILE_PATH=$(echo "$TOOL_INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('file_path',''))" 2>/dev/null)
+    FILE_PATH=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
     if [ -n "$FILE_PATH" ]; then
       echo "- [$TIMESTAMP] **$TOOL_NAME_VAR**: \`$(basename "$FILE_PATH")\`" >> "$SESSION_LOG"
     fi
     ;;
   Bash)
-    CMD=$(echo "$TOOL_INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('command','')[:120])" 2>/dev/null)
+    CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null | head -c 120)
     if [ -n "$CMD" ]; then
       echo "- [$TIMESTAMP] **Bash**: \`$CMD\`" >> "$SESSION_LOG"
     fi
     ;;
   Agent)
-    DESC=$(echo "$TOOL_INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('description',''))" 2>/dev/null)
+    DESC=$(printf '%s' "$INPUT" | jq -r '.tool_input.description // empty' 2>/dev/null)
     if [ -n "$DESC" ]; then
       echo "- [$TIMESTAMP] **Agent**: $DESC" >> "$SESSION_LOG"
     fi
