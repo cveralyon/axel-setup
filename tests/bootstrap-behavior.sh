@@ -102,6 +102,32 @@ jq -e '.target == "claude"' "$install_home/.claude/axel-manifest.json" >/dev/nul
 jq -e '.permissions.defaultMode != "bypassPermissions"' "$install_home/.claude/settings.json" >/dev/null
 jq -e '(.permissions.allow // []) | index("Bash(*)") | not' "$install_home/.claude/settings.json" >/dev/null
 
+# Personal profile ELEVATES the safe-by-default template: bypassPermissions,
+# Bash(*) in allow, and the dangerous-mode prompt suppressed. Skip the network
+# and host-mutating steps so the test only exercises the settings elevation.
+personal_home="$TMP_ROOT/personal-home"
+mkdir -p "$personal_home"
+run_bootstrap "$personal_home" "$stub_bin" \
+  --user-name "CI Bot" \
+  --user-context "CI smoke test" \
+  --language english \
+  --profile personal \
+  --skip-plugins \
+  --skip-monitor \
+  --skip-keybindings \
+  --skip-gsd \
+  --no-launchd
+
+assert_file "$personal_home/.claude/settings.json"
+jq -e '.profile == "personal"' "$personal_home/.claude/axel-manifest.json" >/dev/null
+jq -e '.permissions.defaultMode == "bypassPermissions"' "$personal_home/.claude/settings.json" >/dev/null
+jq -e '(.permissions.allow // []) | index("Bash(*)")' "$personal_home/.claude/settings.json" >/dev/null
+jq -e '.skipDangerousModePermissionPrompt == true' "$personal_home/.claude/settings.json" >/dev/null
+
+# Cross-check: core (the default) must NOT be elevated — proves the elevation is
+# scoped to personal/full, not leaking into the safe-by-default profiles.
+jq -e '.permissions.defaultMode != "bypassPermissions"' "$default_home/.claude/settings.json" >/dev/null
+
 codex_dry_home="$TMP_ROOT/codex-dry-home"
 codex_dry_root="$TMP_ROOT/codex-dry-root"
 mkdir -p "$codex_dry_home"

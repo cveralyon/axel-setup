@@ -219,3 +219,16 @@ printf '%s\n' "$generic_uninstall_apply" | grep -q "REMOVE AGENTS.md"
 assert_no_path "$generic_output/AGENTS.md"
 assert_no_path "$generic_output/commands/daily.md"
 assert_no_path "$generic_output/axel-manifest.json"
+
+# Safety: uninstall --apply must abort when no axel-manifest.json is present
+no_manifest_dir="$TMP_ROOT/no-manifest-dir"
+mkdir -p "$no_manifest_dir"
+set +e
+no_manifest_output="$(node "$ROOT/bin/axel-setup.js" uninstall --target generic --output "$no_manifest_dir" --apply 2>&1)"
+no_manifest_status=$?
+set -e
+if [ "$no_manifest_status" -eq 0 ]; then
+  echo "uninstall --apply should abort when no axel-manifest.json is present" >&2
+  exit 1
+fi
+printf '%s\n' "$no_manifest_output" | grep -q "Refusing to uninstall"

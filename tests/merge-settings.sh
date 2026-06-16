@@ -35,6 +35,14 @@ cat >"$existing" <<'JSON'
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "echo shared-first" },
+          { "type": "command", "command": "echo existing-second" }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
@@ -74,6 +82,20 @@ cat >"$axel" <<'JSON'
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "echo shared-first" },
+          { "type": "command", "command": "echo existing-second" }
+        ]
+      },
+      {
+        "hooks": [
+          { "type": "command", "command": "echo shared-first" },
+          { "type": "command", "command": "echo axel-second" }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
@@ -93,3 +115,12 @@ jq -e '(.permissions.deny | index("Bash(dd *)")) != null' "$merged" >/dev/null
 jq -e '.hooks.PreToolUse | length == 2' "$merged" >/dev/null
 jq -e '.enabledPlugins["existing@example"] == true' "$merged" >/dev/null
 jq -e '.enabledPlugins["axel@example"] == true' "$merged" >/dev/null
+
+# Multi-command dedup: the AXEL Stop entry whose full command list matches the
+# existing one is dropped; the entry that shares only the first command but
+# differs in the second is kept. Result: 2 distinct Stop entries.
+jq -e '.hooks.Stop | length == 2' "$merged" >/dev/null
+jq -e 'any(.hooks.Stop[]; (.hooks | map(.command)) == ["echo shared-first","echo existing-second"])' "$merged" >/dev/null
+jq -e 'any(.hooks.Stop[]; (.hooks | map(.command)) == ["echo shared-first","echo axel-second"])' "$merged" >/dev/null
+
+echo "merge-settings: all assertions passed"
