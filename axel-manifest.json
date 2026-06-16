@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "package": {
     "name": "axel-setup",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "defaultTarget": "claude",
   "targets": {
@@ -123,7 +123,7 @@
       "id": "gsd",
       "name": "get-shit-done-cc",
       "managedExternally": true,
-      "installCommand": "npx -y get-shit-done-cc@latest"
+      "installCommand": "npx -y get-shit-done-cc@1.42.3"
     }
   ]
 }
