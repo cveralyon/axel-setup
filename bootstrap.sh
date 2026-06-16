@@ -249,31 +249,53 @@ run() {
   fi
 }
 
+# Escape a value for safe interpolation into the replacement side of a sed
+# `s|...|...|` command. The base template ships safe-by-default; the only place
+# permissions are elevated is settings_for_profile() below, explicitly and
+# visibly. User-supplied values, however, can contain sed metacharacters
+# (`\`, `|`, `&`) that would corrupt the substitution — escape them here.
+sed_escape() {
+  # Order matters: escape backslashes first, then the delimiter and `&`.
+  printf '%s' "$1" | sed -e 's/[\\]/\\\\/g' -e 's/|/\\|/g' -e 's/&/\\&/g'
+}
+
 settings_for_profile() {
   local src="$1"
   local dest="$2"
 
-  if [ "$PROFILE" = "personal" ] || [ "$PROFILE" = "full" ]; then
+  # The base template (templates/settings.json) is SAFE BY DEFAULT:
+  # defaultMode "acceptEdits", no "Bash(*)" in allow, and
+  # skipDangerousModePermissionPrompt false. Most profiles ship it verbatim.
+  if [ "$PROFILE" != "personal" ] && [ "$PROFILE" != "full" ]; then
     cp "$src" "$dest"
     return
   fi
 
+  # personal/full ELEVATE permissions explicitly and visibly: full autonomy
+  # bypass mode, Bash(*) allowance, and the dangerous-mode prompt suppressed.
+  # This keeps the distributed file safe while preserving per-profile behavior.
   jq '
-    .permissions.defaultMode = "acceptEdits" |
-    .permissions.allow = ((.permissions.allow // []) | map(select(. != "Bash(*)"))) |
-    .skipDangerousModePermissionPrompt = false
+    .permissions.defaultMode = "bypassPermissions" |
+    .permissions.allow = ((.permissions.allow // []) + (if ((.permissions.allow // []) | index("Bash(*)")) then [] else ["Bash(*)"] end)) |
+    .skipDangerousModePermissionPrompt = true
   ' "$src" > "$dest"
 }
 
 write_processed_skill() {
   local src="$1"
   local dest="$2"
+  local posthog_context assistant_language user_name user_context
+
+  posthog_context=$(sed_escape "$POSTHOG_PROJECT_CONTEXT")
+  assistant_language=$(sed_escape "$ASSISTANT_LANGUAGE")
+  user_name=$(sed_escape "$USER_NAME")
+  user_context=$(sed_escape "$USER_CONTEXT")
 
   sed \
-    -e "s|{{POSTHOG_PROJECT_CONTEXT}}|$POSTHOG_PROJECT_CONTEXT|g" \
-    -e "s|{{ASSISTANT_LANGUAGE}}|$ASSISTANT_LANGUAGE|g" \
-    -e "s|{{USER_NAME}}|$USER_NAME|g" \
-    -e "s|{{USER_CONTEXT}}|$USER_CONTEXT|g" \
+    -e "s|{{POSTHOG_PROJECT_CONTEXT}}|$posthog_context|g" \
+    -e "s|{{ASSISTANT_LANGUAGE}}|$assistant_language|g" \
+    -e "s|{{USER_NAME}}|$user_name|g" \
+    -e "s|{{USER_CONTEXT}}|$user_context|g" \
     "$src" > "$dest"
 }
 
@@ -343,7 +365,11 @@ add_or_upgrade() {
         cp "$src" "$UPGRADES_DIR/$upgrade_subdir/$(basename "$dest")"
       fi
       upgrade "$label"
-      eval "$upgraded_var=\$((\$$upgraded_var + 1))"
+      # Increment the named counter without eval. printf -v writes to the
+      # variable named in $upgraded_var; ${!upgraded_var} reads its value.
+      # This stays portable to Bash 3.2 (macOS default), where `local -n`
+      # namerefs are unavailable.
+      printf -v "$upgraded_var" '%s' "$(( ${!upgraded_var} + 1 ))"
     fi
     # Same content — nothing to do
   else
@@ -352,7 +378,7 @@ add_or_upgrade() {
     else
       cp "$src" "$dest"
     fi
-    eval "$added_var=\$((\$$added_var + 1))"
+    printf -v "$added_var" '%s' "$(( ${!added_var} + 1 ))"
   fi
 }
 
@@ -630,11 +656,15 @@ for hook_file in "$SCRIPT_DIR/hooks/"*; do
 
   # Hooks need placeholder substitution, so we use a temp file for comparison.
   # Keep the sed list in sync with any new {{PLACEHOLDER}} added to hook files.
+  # User values are escaped so sed metacharacters (\ | &) can't corrupt the sub.
   PROCESSED=$(mktemp)
+  HOOK_USER_NAME=$(sed_escape "$USER_NAME")
+  HOOK_USER_CONTEXT=$(sed_escape "$USER_CONTEXT")
+  HOOK_ASSISTANT_LANGUAGE=$(sed_escape "$ASSISTANT_LANGUAGE")
   sed \
-    -e "s|{{USER_NAME}}|$USER_NAME|g" \
-    -e "s|{{USER_CONTEXT}}|$USER_CONTEXT|g" \
-    -e "s|{{ASSISTANT_LANGUAGE}}|$ASSISTANT_LANGUAGE|g" \
+    -e "s|{{USER_NAME}}|$HOOK_USER_NAME|g" \
+    -e "s|{{USER_CONTEXT}}|$HOOK_USER_CONTEXT|g" \
+    -e "s|{{ASSISTANT_LANGUAGE}}|$HOOK_ASSISTANT_LANGUAGE|g" \
     "$hook_file" > "$PROCESSED"
 
   if [ -f "$DEST" ]; then
@@ -915,9 +945,12 @@ if ! $SKIP_MONITOR && [[ "$OSTYPE" == "darwin"* ]]; then
       info "launchd agent skipped by --no-launchd or profile"
     elif ! $DRY_RUN; then
       mkdir -p "$(dirname "$PLIST_DEST")"
-      sed -e "s|{{USERNAME}}|${USERNAME:-$(whoami)}|g" \
-          -e "s|{{HOME}}|$HOME|g" \
-          -e "s|{{NODE_PATH}}|$NODE_BIN|g" \
+      PLIST_USERNAME=$(sed_escape "${USERNAME:-$(whoami)}")
+      PLIST_HOME=$(sed_escape "$HOME")
+      PLIST_NODE_BIN=$(sed_escape "$NODE_BIN")
+      sed -e "s|{{USERNAME}}|$PLIST_USERNAME|g" \
+          -e "s|{{HOME}}|$PLIST_HOME|g" \
+          -e "s|{{NODE_PATH}}|$PLIST_NODE_BIN|g" \
           "$PLIST_SRC" > "$PLIST_DEST"
       launchctl load "$PLIST_DEST" 2>/dev/null && \
         log "  Usage monitor started at http://localhost:9119" || \

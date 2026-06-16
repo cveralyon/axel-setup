@@ -50,7 +50,7 @@ function parseRuntimeArgs(argv, command) {
     const arg = argv[index];
     if (arg === "--home") {
       requireValue(argv, index, arg);
-      home = argv[index + 1];
+      home = path.resolve(argv[index + 1]);
       index += 1;
     } else if (arg === "--target") {
       requireValue(argv, index, arg);
@@ -58,11 +58,11 @@ function parseRuntimeArgs(argv, command) {
       index += 1;
     } else if (arg === "--codex-home") {
       requireValue(argv, index, arg);
-      codexHome = argv[index + 1];
+      codexHome = path.resolve(argv[index + 1]);
       index += 1;
     } else if (arg === "--output") {
       requireValue(argv, index, arg);
-      output = argv[index + 1];
+      output = path.resolve(argv[index + 1]);
       index += 1;
     } else if (arg === "--apply" && command === "uninstall") {
       apply = true;
@@ -511,8 +511,55 @@ function pruneEmptyParents(startDir, stopDir) {
   }
 }
 
+const DANGEROUS_ROOTS = new Set(["/", "/etc", "/usr", "/bin", "/sbin", "/var", "/tmp"]);
+
+function assertSafeInstallRoot(installRoot, apply) {
+  if (!apply) {
+    return;
+  }
+
+  // Block exact dangerous roots
+  if (DANGEROUS_ROOTS.has(installRoot)) {
+    console.error(`Refusing to uninstall from dangerous root: ${installRoot}`);
+    process.exit(1);
+  }
+
+  // Block exact home directory (subdir is fine: ~/.claude is allowed)
+  if (installRoot === os.homedir()) {
+    console.error(`Refusing to uninstall from home directory directly: ${installRoot}`);
+    process.exit(1);
+  }
+}
+
+function assertManifestValid(manifestPath, installRoot, apply) {
+  if (!apply) {
+    return;
+  }
+
+  if (!fs.existsSync(manifestPath)) {
+    console.error(`Refusing to uninstall: no axel-manifest.json found at ${manifestPath}`);
+    console.error(`This directory does not appear to be an AXEL install root.`);
+    process.exit(1);
+  }
+
+  try {
+    const manifest = readJson(manifestPath);
+    if (!manifest || typeof manifest !== "object" || !manifest.package || !manifest.package.name) {
+      throw new Error("Manifest missing required package.name field");
+    }
+  } catch (err) {
+    console.error(`Refusing to uninstall: axel-manifest.json at ${manifestPath} is invalid: ${err.message}`);
+    process.exit(1);
+  }
+}
+
 function runUninstall(argv) {
   const { apply, installRoot, manifestPath, target } = resolveRuntime(argv, "uninstall");
+
+  // Hard guards before any destructive operation
+  assertSafeInstallRoot(installRoot, apply);
+  assertManifestValid(manifestPath, installRoot, apply);
+
   const manifest = readInstalledManifest(manifestPath, target);
 
   if (!manifest) {
