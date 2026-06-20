@@ -9,7 +9,8 @@ Releases are grouped by date and logical scope. npm package releases use semver 
 
 ## [Unreleased]
 
-<!-- Nothing pending. -->
+### Added
+- `extras/iterm-theming/` optional add-on (macOS + iTerm2 only): per-session tab color, directory plus git branch badge, `tabname`/`tabcolor` helpers, and an opt-in "Claude" dynamic profile (bigger badge, confirm-before-closing, unlimited scrollback). Installed explicitly via `extras/iterm-theming/install.sh` (idempotent, backs up `~/.zshrc`, ShellCheck-clean). Not run by `bootstrap.sh`, which stays additive to `~/.claude` only.
 
 ---
 

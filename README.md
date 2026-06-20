@@ -190,6 +190,17 @@ bash bootstrap.sh --dry-run
 
 **Safe to run multiple times.** The bootstrap is fully additive — it only adds what's missing, proposes upgrades for existing files, and never overwrites your configuration, memory, or CLAUDE.md.
 
+### Optional: iTerm2 session theming (macOS)
+
+A separate, opt-in add-on under [`extras/iterm-theming/`](extras/iterm-theming/) gives each iTerm2 session a distinct, stable tab color plus a directory and git branch badge, so parallel sessions are easy to tell apart at a glance. It is **not** run by `bootstrap.sh`: it is macOS + iTerm2 only, and it is the one component that writes outside `~/.claude` (to `~/.config/iterm`, `~/.zshrc`, and iTerm2 DynamicProfiles). Install it explicitly:
+
+```bash
+bash extras/iterm-theming/install.sh            # install (idempotent, backs up ~/.zshrc)
+bash extras/iterm-theming/install.sh --dry-run  # preview, change nothing
+```
+
+See [`extras/iterm-theming/README.md`](extras/iterm-theming/README.md) for what it does, the commands it adds, and how to revert.
+
 ## Prerequisites
 
 | Tool | Why | Install |

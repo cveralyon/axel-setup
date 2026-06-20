@@ -1,0 +1,24 @@
+{
+  "Profiles": [
+    {
+      "Name": "Claude",
+      "Guid": "CLAUDE00-0000-4000-A000-000000000001",
+      "Dynamic Profile Parent Name": "Default",
+      "Badge Text": "\\(session.path)",
+      "Badge Max Width": 0.7,
+      "Badge Max Height": 0.3,
+      "Badge Right Margin": 6,
+      "Badge Top Margin": 4,
+      "Badge Color": {
+        "Red Component": 0.62,
+        "Green Component": 0.67,
+        "Blue Component": 0.74,
+        "Alpha Component": 0.4,
+        "Color Space": "sRGB"
+      },
+      "Prompt Before Closing 2": 1,
+      "Unlimited Scrollback": true,
+      "Title Components": 1
+    }
+  ]
+}
