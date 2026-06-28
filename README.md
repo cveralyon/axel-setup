@@ -54,7 +54,7 @@ See [AXEL Multi-Runtime Roadmap](docs/roadmap/multi-runtime.md) for the adapter 
 The recommended install path is directly through npx:
 
 ```bash
-npx axel-setup@0.3.0 --dry-run --user-name "Your Name"
+npx axel-setup@0.4.0 --dry-run --user-name "Your Name"
 ```
 
 By default AXEL uses `--profile core`, a public safe Claude Code install that keeps conservative permissions and skips optional side effects such as plugin installation, usage monitor launchd setup, keybindings, and the external GSD installer. Use `--profile personal` or `--profile full` when you explicitly want the fuller local automation setup.
@@ -62,7 +62,7 @@ By default AXEL uses `--profile core`, a public safe Claude Code install that ke
 Alternatively, for a macOS one-line installer, use the pinned curl wrapper. It checks for Claude Code, jq, zsh, and Node before delegating to the packaged npm release:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cveralyon/axel-setup/v0.3.0/install.sh | bash -s -- --dry-run --user-name "Your Name"
+curl -fsSL https://raw.githubusercontent.com/cveralyon/axel-setup/v0.4.0/install.sh | bash -s -- --dry-run --user-name "Your Name"
 ```
 
 Before the first npm publish, use the same wrapper against the GitHub package source:

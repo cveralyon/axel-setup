@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-AXEL_PACKAGE="${AXEL_SETUP_PACKAGE:-axel-setup@0.3.0}"
+AXEL_PACKAGE="${AXEL_SETUP_PACKAGE:-axel-setup@0.4.0}"
 AXEL_NPX="${AXEL_SETUP_NPX:-npx}"
 
 die() {
