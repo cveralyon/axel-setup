@@ -540,3 +540,7 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for the full history of changes grouped by 
 ## License
 
 MIT
+
+## Creator
+
+Created by **Cristián Vera Lyon** ([cveralyon](https://github.com/cveralyon)).

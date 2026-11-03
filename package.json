@@ -4,7 +4,7 @@
   "description": "Claude Code-first team configuration package with hooks, agents, commands, skills, plugins, and repeatable bootstrap tooling.",
   "license": "MIT",
   "author": {
-    "name": "Cristian Vera Lyon",
+    "name": "Cristián Vera Lyon",
     "url": "https://github.com/cveralyon"
   },
   "keywords": [
